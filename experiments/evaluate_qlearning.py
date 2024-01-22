@@ -7,9 +7,10 @@ def main():
 	create_experiment_folders()
 	sequence = 'HHPCHHPCCPCPPHHHHPPHCHPHPHCHPP'
 
-	algorithm = run_protein_folding(sequence, 1000)
+	best_state, algorithm = run_protein_folding(sequence, 10000)
 
-	protein.plot(f'./output/{algorithm.get_name()}_len{len(sequence)}.png')
+	algorithm.plot(f'./output/_len.png')
+	best_state.plot(f'./output/best_len.png')
 
 
 if __name__ == '__main__':
