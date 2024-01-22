@@ -7,6 +7,7 @@ def main():
     create_experiment_folders()
 
     sequence = 'H' * 30
+    sequence = "HCPHPHPHCHHHH"
     protein = Protein(sequence)
 
     algorithm = IterativeRandom(protein, dimensions=2, debug=True)
