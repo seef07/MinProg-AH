@@ -53,6 +53,7 @@ class ProteinFoldingAgent(Algorithm):
             # Exploitation: choose the best action based on Q-table values
             q_values = [self.q_table.get(state, action) for action in possible_actions]
             max_q_value = max(q_values)
+            print(q_values)
             # In case there are multiple actions with the same max Q-value, choose randomly among them
             best_actions = [action for action, q_value in zip(possible_actions, q_values) if q_value == max_q_value]
             chosen_action = random.choice(best_actions)
@@ -109,27 +110,19 @@ def get_dimension_penalty(state):
     return sum(scores)
 
 def get_reward(current_state, next_state, action, directions):
-    max_score = 40
-        # Define the weights for different components of the reward
-    score_weight =1.0  # Adjust as necessary
-    fold_amount_weight = 1  # Adjust as necessary
-    dimension_penalty_weight = 1  # Adjust as necessary
-
+    reward = 0
     if not fast_validate_protein(next_state.get_order()):
-        return -10  # Penalty for invalid states
+        reward =  -1  # Penalty for invalid states
 
     current_score = -current_state.get_bond_score() if fast_validate_protein(current_state.get_order()) else 0
     next_score = -next_state.get_bond_score()
-
     print("####")
     total_reward = lookahead_reward(current_state, action, directions, max_depth = 3, current_depth = 0)
-    print("##")
-    # Calculate fold amount
-    print(total_reward)
     next_fold_amount = calculate_fold_amount(next_state)
     # Compute the final reward
     dimension_penalty = get_dimension_penalty(next_state)*10
-    reward = next_score + next_fold_amount *3 + total_reward/50
+    print(f"{reward}+{next_score}+{total_reward}+{next_fold_amount}")
+    reward += next_score*2 + next_fold_amount /4 - total_reward 
     return reward
 
 def lookahead_reward(state, action, directions, max_depth, current_depth=0):
@@ -159,7 +152,7 @@ def run_protein_folding(sequence, iteration):
     num_iterations = iteration
 
     current_state = protein
-
+    best_state = 0
     for _ in range(num_iterations):
         possible_actions = get_free_directions(current_state, agent.directions)
         chosen_action = agent.choose_action(current_state, possible_actions)
@@ -168,6 +161,13 @@ def run_protein_folding(sequence, iteration):
 
         agent.learn(current_state, chosen_action, reward, next_state, possible_actions)
 
+        getbond = current_state.get_bond_score()
+        best_score = 0
+        if getbond <= best_score and fast_validate_protein(current_state.get_order()):
+            best_state = current_state
+            best_score = getbond
+            print("#####################################!!!################################")
+
         print(f'Current State: {current_state.get_order()}, Action: {chosen_action}, Next State: {next_state}, Reward: {reward}/{current_state.get_bond_score()}')
 
         current_state = next_state
@@ -175,4 +175,5 @@ def run_protein_folding(sequence, iteration):
         if current_state == 'goal_state':
             break
 
-    return protein
+
+    return best_state, current_state
