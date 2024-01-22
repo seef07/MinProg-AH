@@ -1,9 +1,10 @@
 import protein_folding.definitions as definitions
 from .vector import Vec3D
-
+from .fast_protein import fast_validate_protein
 from typing import Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from .protein import Protein
+    
 
 
 _bond_values = {
@@ -200,8 +201,17 @@ class Node:
         self.pos = new_pos
 
         # Save new direction to self and to protein
-        self.direction_from_previous = direction
-        self.protein.order[self.id] = direction
+        test_protein = self.protein
+        test_protein.order[self.id] = direction
+
+        if fast_validate_protein(test_protein.get_order()):
+            print("Valid!!")
+            self.directionfrom_previous = direction
+            self.protein.order[self.id] = direction
+        else:
+            print("Invalid!!")
+        
+        
 
         # If there is a next node, make them change position too
         if self.next:
