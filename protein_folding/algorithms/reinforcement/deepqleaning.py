@@ -4,7 +4,7 @@ import sys
 sys.path.append('..')
 from tqdm import tqdm
 from typing import TYPE_CHECKING
-from protein_folding.fast_protein import fast_validate_protein, fast_compute_bond_score
+from protein_folding.fast_protein import fast_validate_protein, fast_compute_bond_score, fast_validate_protein_action
 from protein_folding.protein import Protein
 
 from .. import Algorithm
@@ -45,7 +45,8 @@ class ProteinFoldingAgent(Algorithm):
         return exp_q / exp_q.sum()
 
     def choose_action(self, state, possible_actions):
-        print(possible_actions)
+        if not possible_actions:
+            raise Exception("No valid actions available")
         if random.random() < self.epsilon:
             # Exploration: choose a random action
             chosen_action = random.choice(possible_actions)
@@ -53,13 +54,13 @@ class ProteinFoldingAgent(Algorithm):
             # Exploitation: choose the best action based on Q-table values
             q_values = [self.q_table.get(state, action) for action in possible_actions]
             max_q_value = max(q_values)
-            print(q_values)
             # In case there are multiple actions with the same max Q-value, choose randomly among them
             best_actions = [action for action, q_value in zip(possible_actions, q_values) if q_value == max_q_value]
             chosen_action = random.choice(best_actions)
 
         # Decay the epsilon value to gradually shift from exploration to exploitation
         self.epsilon = max(self.epsilon * self.epsilon_decay, self.epsilon_min)
+        print(chosen_action)
         return chosen_action
 
     def simulate_new_order(self, state, action):
@@ -68,7 +69,7 @@ class ProteinFoldingAgent(Algorithm):
 
         # Update the new order based on the chosen action
         node_idx, new_direction = action
-        new_order[node_idx - 1] = new_direction  # Adjust indexing if necessary
+        new_order[node_idx] = new_direction  # Adjust indexing if necessary
 
         return new_order
     
@@ -77,11 +78,13 @@ class ProteinFoldingAgent(Algorithm):
         self.epsilon = max(self.epsilon * self.epsilon_decay, self.epsilon_min)
 
 def get_free_directions(current_state, directions):
+    current = current_state.get_order()
     free_actions = []
-    for idx, node in enumerate(current_state.nodes[1:], start=1):  # start=1 to account for skipping first node
-        node_free_directions = node.get_free_directions(directions)
-        node_actions = [(idx, direction) for direction in node_free_directions]
-        free_actions.extend(node_actions)
+    for idx in range(2, len(current)):  # start=1 to account for skipping first node
+        for direction in directions:
+            vector = (idx, direction)
+            if fast_validate_protein_action(current, vector):
+                free_actions.append(vector)      
     return free_actions  # Return a list of (node_idx, direction) tuples
 
 def get_next_state(current_state, action):
@@ -109,38 +112,30 @@ def get_dimension_penalty(state):
     scores = dimension_heuristic.interpret()
     return sum(scores)
 
-def get_reward(current_state, next_state, action, directions):
+def get_reward(current_state, next_state, action, possible_actions, directions):
     reward = 0
-    if not fast_validate_protein(next_state.get_order()):
-        reward =  -1  # Penalty for invalid states
-
     current_score = -current_state.get_bond_score() if fast_validate_protein(current_state.get_order()) else 0
     next_score = -next_state.get_bond_score()
-    print("####")
-    total_reward = lookahead_reward(current_state, action, directions, max_depth = 3, current_depth = 0)
+    #total_reward = lookahead_reward(current_state, action, directions, max_depth = 3, current_depth = 0)
     next_fold_amount = calculate_fold_amount(next_state)
     # Compute the final reward
     dimension_penalty = get_dimension_penalty(next_state)*10
-    print(f"{reward}+{next_score}+{total_reward}+{next_fold_amount}")
-    reward += next_score*2 + next_fold_amount /4 - total_reward 
+    print(f"{reward}+{next_score}++{next_fold_amount}")
+    reward += next_score*2 + next_fold_amount /4  
     return reward
 
 def lookahead_reward(state, action, directions, max_depth, current_depth=0):
-    if not fast_validate_protein(state.get_order()):
-        return -1  # Penalty for invalid states
-
     if current_depth == max_depth:
         return 0  # No further rewards at maximum depth
 
     next_state = get_next_state(state, action)
-    if not fast_validate_protein(next_state.get_order()):
-        return -1  # Penalty for reaching an invalid state
-
     immediate_reward = -next_state.get_bond_score()
     lookahead_rewards = 0
+    print(state.get_order())
     possible_actions = get_free_directions(next_state, directions)
     
     for next_action in possible_actions:
+        print(f"Nextaction{next_action}")
         lookahead_rewards += lookahead_reward(next_state, next_action, directions, max_depth, current_depth + 1)
     
     return immediate_reward + lookahead_rewards
@@ -148,16 +143,17 @@ def lookahead_reward(state, action, directions, max_depth, current_depth=0):
 
 def run_protein_folding(sequence, iteration):
     protein = Protein(sequence)
-    agent = ProteinFoldingAgent(protein, dimensions = 2, learning_rate=0.1, discount_factor=0.9, epsilon=0.9, epsilon_min=0.01, epsilon_decay=0.995)
+    agent = ProteinFoldingAgent(protein, dimensions = 2, learning_rate=0.4, discount_factor=0.9, epsilon=0.3, epsilon_min=0.01, epsilon_decay=0.995)
     num_iterations = iteration
 
     current_state = protein
     best_state = 0
     for _ in range(num_iterations):
         possible_actions = get_free_directions(current_state, agent.directions)
+        print(possible_actions)
         chosen_action = agent.choose_action(current_state, possible_actions)
         next_state = get_next_state(current_state, chosen_action)
-        reward = get_reward(current_state, next_state, chosen_action, agent.directions)
+        reward = get_reward(current_state, next_state, chosen_action, possible_actions,  agent.directions)
 
         agent.learn(current_state, chosen_action, reward, next_state, possible_actions)
 
