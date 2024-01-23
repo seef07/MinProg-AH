@@ -17,3 +17,17 @@ def initialize(N_aminoacids, seq):
     return A, J
 
 
+def step_2D_jit():
+    d = np.random.randint(1, 5)
+    if d == 1:
+        x_s, y_s = 1, 0
+    elif d == 2:
+        x_s, y_s = 0, 1
+    elif d == 3:
+        x_s, y_s = -1, 0
+    elif d == 4:
+        x_s, y_s = 0, -1
+    return x_s, y_s
+
+
+
