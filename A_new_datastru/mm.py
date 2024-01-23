@@ -25,3 +25,7 @@ def calculate_energy(positions, sequence):
                 energy += energy_matrix[pair]
     return energy
 
+
+def is_valid_configuration(positions):
+    return len(positions) == len(set(positions))
+
