@@ -29,5 +29,8 @@ def step_2D_jit():
         x_s, y_s = 0, -1
     return x_s, y_s
 
+def neighbor(x, y, x_test, y_test):
+    return (x - x_test) ** 2 + (y - y_test) ** 2 < 1.1
+
 
 
