@@ -18,3 +18,14 @@ def phase_transition(N_aminoacids, seq):
                     if step[i] < ave_int:
                         continue
                     file.write('{} {} {}\n'.format(step[i], FreeEnergy[i], L[i]))
+
+def equilibrium_mean_SD(fname):
+    a = np.loadtxt(fname)
+    E = a[:, 1]
+    L = a[:, 2]
+    std_E = np.std(E)
+    std_L = np.std(L)
+    se_E = std_E / np.sqrt(len(E))
+    se_L = std_L / np.sqrt(len(L))
+    return np.mean(E), np.mean(L), std_E, se_E, std_L, se_L
+
