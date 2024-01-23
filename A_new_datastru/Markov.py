@@ -181,3 +181,16 @@ def visualize_positions(R, A):
         print(' '.join(row))
 
 ##############################################################################################
+
+def main():
+    seq = "HHPHHHPH"
+    N_aminoacids = len(seq)
+    A, J = initialize(N_aminoacids, seq)
+    print(A,J)
+    step, FreeEnergy, length, R = ProteinFolding_jit(N_aminoacids, J, A)
+    visualize_positions(R, A)
+
+    plot_folding_structure(R, A)
+    print(R, A, J)
+if __name__ == '__main__':
+    main()
