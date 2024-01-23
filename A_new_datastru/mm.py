@@ -82,9 +82,42 @@ def visualize_protein(positions, sequence):
     plt.title(f"Protein Folding Visualization\nEnergy: {calculate_energy(positions, sequence)}")
     plt.show()
 
+def visualize_in_cmd(positions, sequence):
+    # Determine the size of the grid
+    x_coords, y_coords = zip(*positions)
+    min_x, max_x = min(x_coords), max(x_coords)
+    min_y, max_y = min(y_coords), max(y_coords)
+
+    # Adjust grid size for connections
+    grid_width = (max_x - min_x + 1) * 2 + 1
+    grid_height = (max_y - min_y + 1) * 2 + 1
+
+    # Create an empty grid
+    grid = [[' ' for _ in range(grid_width)] for _ in range(grid_height)]
+
+    # Place the amino acids and connections on the grid
+    for i, (pos, acid) in enumerate(zip(positions, sequence)):
+        x, y = (pos[0] - min_x) * 2 + 1, (pos[1] - min_y) * 2 + 1
+        grid[y][x] = acid
+
+        # Draw connections
+        if i > 0:
+            prev_x, prev_y = (positions[i-1][0] - min_x) * 2 + 1, (positions[i-1][1] - min_y) * 2 + 1
+            if prev_x == x:  # Vertical connection
+                grid[min(y, prev_y) + 1][x] = '|'
+            elif prev_y == y:  # Horizontal connection
+                grid[y][min(x, prev_x) + 1] = '-'
+
+    # Print the grid
+    for row in grid:
+        print(''.join(row))
+
 
 
 # Run the simulation
 best_positions, best_energy = monte_carlo_folding(sequence)
 print("Best positions:", best_positions)
 print("Best energy:", best_energy)
+visualize_in_cmd(best_positions, sequence)
+
+visualize_protein(best_positions, sequence)
