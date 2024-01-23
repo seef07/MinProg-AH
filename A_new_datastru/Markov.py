@@ -103,6 +103,39 @@ def calculate_energy(R, J, A):
     return energy
 
 
+def ProteinFolding_jit(N_aminoacids, J, A, Temp=10, Nsteps=1000000):
+    R = np.zeros((N_aminoacids, 2))
+    for i in range(N_aminoacids):
+        R[i, 0], R[i, 1] = i, 0
+
+    FreeEnergy = []
+    length = []
+    step = []
+
+    for i in range(Nsteps):
+        k = np.random.randint(1, N_aminoacids)
+        x_s, y_s = np.random.randint(-1, 2), np.random.randint(-1, 2)
+
+        new_positions = calculate_new_positions(R, k, x_s, y_s)
+        # Pass x_new and y_new as separate arguments instead of new_positions[k]
+        if not is_valid_move(R, new_positions[k, 0], new_positions[k, 1], k):
+            print("invalid")
+            continue
+        F_new = calculate_energy(new_positions, J, A)
+        F_old = calculate_energy(R, J, A)
+        delta_energy = F_new - F_old
+
+        if delta_energy <= 0 or random.random() < np.exp(-delta_energy / Temp):
+            R = new_positions
+            visualize_positions(R, A)
+
+        r2 = np.sum((R[N_aminoacids - 1] - R[0]) ** 2)
+        step.append(i + 1)
+        FreeEnergy.append(F_new)
+        length.append(np.sqrt(r2))
+
+    return step, FreeEnergy, length, R
+
 
 def initialize_Uniform_J(N_aminoacids):
     # Deze functie zal nu uniforme interactie-energieën instellen
