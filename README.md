@@ -54,4 +54,11 @@ iterativegreed = Score: -18; time: 27.30
 
 Monte Carlo = Score: -18; time: 9.78
 
+#### Langere sequence ?
+Sequence: PPPHHPPHHPPPPPHHHHHHHPPHHPPPPHHPPHPP
 
+Iterative greedy. Score: -5 ; time: 30.081570625305176 seconds
+
+simulatedAnealing. Score: -9; time: 6.57  
+
+Monte carlo. Score: -11; Time: Unknown but not more then 10 seconds.
