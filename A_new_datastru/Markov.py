@@ -101,3 +101,13 @@ def calculate_energy(R, J, A):
                 if distance < 1.1:
                     energy -= J[A[i], A[j]]
     return energy
+
+
+
+def initialize_Uniform_J(N_aminoacids):
+    # Deze functie zal nu uniforme interactie-energieën instellen
+    A = np.zeros(N_aminoacids, int)
+    J = np.zeros((4, 4)) + 5
+    # Hier kun je de waarden van A instellen zoals nodig is voor je toepassing
+    return A, J
+
