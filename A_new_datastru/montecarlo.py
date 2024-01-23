@@ -47,7 +47,7 @@ def rotate_segment(positions, index, clockwise=True):
     return positions
 
 
-def monte_carlo_folding(sequence, iterations=100000, start_temp=1.0, end_temp=0.01):
+def monte_carlo_folding(sequence, iterations=50000, start_temp=1.0, end_temp=0.01):
     current_positions = [(i, 0) for i in range(len(sequence))]
     current_energy = calculate_energy(current_positions, sequence)
     best_positions, best_energy = current_positions, current_energy
@@ -57,7 +57,7 @@ def monte_carlo_folding(sequence, iterations=100000, start_temp=1.0, end_temp=0.
         index = random.randint(1, len(sequence) - 2)
         new_positions = rotate_segment(current_positions, index, random.choice([True, False]))
         new_energy = calculate_energy(new_positions, sequence)
-        print(new_positions)
+        visualize_in_cmd(best_positions, sequence)
         if new_energy < current_energy:
             current_positions, current_energy = new_positions, new_energy
             if new_energy < best_energy:

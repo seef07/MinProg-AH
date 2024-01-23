@@ -29,6 +29,23 @@ def step_2D_jit():
         x_s, y_s = 0, -1
     return x_s, y_s
 
+def generate_output(score, R):
+    output = ["1"]
+    for i in range(1, len(R)):
+        x_diff = R[i, 0] - R[i - 1, 0]
+        y_diff = R[i, 1] - R[i - 1, 1]
+        if x_diff == 1:
+            output.append("1")
+        elif x_diff == -1:
+            output.append("-1")
+        elif y_diff == 1:
+            output.append("2")
+        elif y_diff == -1:
+            output.append("-2")
+    output.append("0")  # No bending needed for the last amino acid
+    output[0] = str(score)
+    return " ".join(output)
+
 def neighbor(x, y, x_test, y_test):
     return (x - x_test) ** 2 + (y - y_test) ** 2 < 1.1
 
@@ -73,7 +90,7 @@ def is_valid_move(R, x_new, y_new, k):
     if k > 0 and np.abs(R[k - 1, 0] - x_new) + np.abs(R[k - 1, 1] - y_new) != 1:
         return False
     for i in range(k):
-        if R[i, 0] == x_new and R[i, 1] == y_new:
+        if np.all(R[i] == [x_new, y_new]):
             return False
     return True
 
@@ -102,39 +119,40 @@ def calculate_energy(R, J, A):
                     energy -= J[A[i], A[j]]
     return energy
 
+def are_neighbors(position1, position2):
+    return np.linalg.norm(position1 - position2) <= 1.1
 
-def ProteinFolding_jit(N_aminoacids, J, A, Temp=10, Nsteps=1000000):
-    R = np.zeros((N_aminoacids, 2))
+
+def ProteinFolding(N_aminoacids, A, J, Temp=10, Nsteps=1000000):
+    R = np.zeros((N_aminoacids, 2), dtype=int)
     for i in range(N_aminoacids):
         R[i, 0], R[i, 1] = i, 0
 
-    FreeEnergy = []
-    length = []
-    step = []
+    best_score = calculate_score(A, R, J)
+    best_R = np.copy(R)
 
     for i in range(Nsteps):
-        k = np.random.randint(1, N_aminoacids)
+        k = np.random.randint(1, N_aminoacids)  # Include all amino acids
         x_s, y_s = np.random.randint(-1, 2), np.random.randint(-1, 2)
+        new_positions = np.copy(R)
+        new_positions[k:, 0] += x_s
+        new_positions[k:, 1] += y_s
 
-        new_positions = calculate_new_positions(R, k, x_s, y_s)
-        # Pass x_new and y_new as separate arguments instead of new_positions[k]
-        if not is_valid_move(R, new_positions[k, 0], new_positions[k, 1], k):
-            print("invalid")
-            continue
-        F_new = calculate_energy(new_positions, J, A)
-        F_old = calculate_energy(R, J, A)
-        delta_energy = F_new - F_old
-
-        if delta_energy <= 0 or random.random() < np.exp(-delta_energy / Temp):
+        if np.all((np.sum(np.abs(new_positions - new_positions[:, np.newaxis]), axis=-1) > 1.1)):
             R = new_positions
-            visualize_positions(R, A)
+            current_score = calculate_score(A, R, J)
+            if current_score < best_score:
+                best_score = current_score
+                best_R = np.copy(R)
 
-        r2 = np.sum((R[N_aminoacids - 1] - R[0]) ** 2)
-        step.append(i + 1)
-        FreeEnergy.append(F_new)
-        length.append(np.sqrt(r2))
+    return best_score, best_R
 
-    return step, FreeEnergy, length, R
+def calculate_score(A, R, J):
+    score = 0
+    for i in range(len(R) - 1):
+        if A[i] == 1 and A[i + 1] == 1 and not np.all(are_neighbors(R[i], R[i + 1])):
+            score -= J[A[i], A[i + 1]]  # Hydrophobic interaction between adjacent 'H' amino acids
+    return score
 
 
 def initialize_Uniform_J(N_aminoacids):
@@ -186,11 +204,15 @@ def main():
     seq = "HHPHHHPH"
     N_aminoacids = len(seq)
     A, J = initialize(N_aminoacids, seq)
-    print(A,J)
-    step, FreeEnergy, length, R = ProteinFolding_jit(N_aminoacids, J, A)
-    visualize_positions(R, A)
+    best_score, best_R = ProteinFolding(N_aminoacids, J, A)
+    
+    print("Best Score:", best_score)
+    print("Best Folding:", best_R)
+    
+    # Generate the output format
+    output = generate_output(best_score, best_R)
+    print("Output:", output)
 
-    plot_folding_structure(R, A)
-    print(R, A, J)
+
 if __name__ == '__main__':
     main()
