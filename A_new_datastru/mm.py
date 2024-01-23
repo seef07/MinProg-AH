@@ -29,3 +29,20 @@ def calculate_energy(positions, sequence):
 def is_valid_configuration(positions):
     return len(positions) == len(set(positions))
 
+def rotate_segment(positions, index, clockwise=True):
+    if index <= 0 or index >= len(positions) - 1:
+        return positions
+
+    pivot = positions[index]
+    new_positions = positions.copy()
+    for i in range(index + 1, len(positions)):
+        dx, dy = positions[i][0] - pivot[0], positions[i][1] - pivot[1]
+        if clockwise:
+            new_positions[i] = (pivot[0] - dy, pivot[1] + dx)
+        else:
+            new_positions[i] = (pivot[0] + dy, pivot[1] - dx)
+
+    if is_valid_configuration(new_positions):
+        return new_positions
+    return positions
+
