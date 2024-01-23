@@ -144,3 +144,40 @@ def initialize_Uniform_J(N_aminoacids):
     # Hier kun je de waarden van A instellen zoals nodig is voor je toepassing
     return A, J
 
+ ##########################PloT#################################################################           
+def plot_folding_structure(R, A):
+    """Plot de structuur van het gevouwen eiwit."""
+    for i in range(len(R) - 1):
+        plt.plot([R[i][0], R[i+1][0]], [R[i][1], R[i+1][1]], 'ro-')
+        plt.text(R[i][0], R[i][1], str(A[i]))
+
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.title('Eiwit Vouwstructuur')
+    plt.grid(True)
+    plt.show()
+
+def visualize_positions(R, A):
+    # Create a map of amino acids for visualization
+    amino_acid_symbols = {1: 'H', 2: 'P', 3: 'C'}
+
+    # Determine the size of the grid
+    x_min, y_min = np.min(R, axis=0)
+    x_max, y_max = np.max(R, axis=0)
+
+    grid_width = int(x_max - x_min + 1)
+    grid_height = int(y_max - y_min + 1)
+
+    # Create an empty grid
+    grid = [[' ' for _ in range(grid_width)] for _ in range(grid_height)]
+
+    # Place the amino acids on the grid
+    for pos, acid in zip(R, A):
+        x, y = pos
+        grid[int(y - y_min)][int(x - x_min)] = amino_acid_symbols[acid]
+
+    # Print the grid
+    for row in grid[::-1]:  # reverse for correct y-axis orientation
+        print(' '.join(row))
+
+##############################################################################################
