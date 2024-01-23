@@ -46,3 +46,45 @@ def rotate_segment(positions, index, clockwise=True):
         return new_positions
     return positions
 
+
+def monte_carlo_folding(sequence, iterations=100000, start_temp=1.0, end_temp=0.01):
+    current_positions = [(i, 0) for i in range(len(sequence))]
+    current_energy = calculate_energy(current_positions, sequence)
+    best_positions, best_energy = current_positions, current_energy
+
+    for iteration in range(iterations):
+        temp = start_temp - iteration * (start_temp - end_temp) / iterations
+        index = random.randint(1, len(sequence) - 2)
+        new_positions = rotate_segment(current_positions, index, random.choice([True, False]))
+        new_energy = calculate_energy(new_positions, sequence)
+        print(new_positions)
+        if new_energy < current_energy:
+            current_positions, current_energy = new_positions, new_energy
+            if new_energy < best_energy:
+                best_positions, best_energy = new_positions, new_energy
+        elif random.random() < math.exp((current_energy - new_energy) / temp):
+            current_positions, current_energy = new_positions, new_energy
+
+    return best_positions, best_energy
+
+def visualize_protein(positions, sequence):
+    # Map each amino acid type to a color
+    colors = {'H': 'red', 'P': 'blue', 'C': 'green'}
+    color_sequence = [colors[acid] for acid in sequence]
+
+    x, y = zip(*positions)
+    plt.figure(figsize=(10, 10))
+    plt.scatter(x, y, color=color_sequence)
+
+    for i in range(len(positions) - 1):
+        plt.plot([positions[i][0], positions[i + 1][0]], [positions[i][1], positions[i + 1][1]], color='black')
+
+    plt.title(f"Protein Folding Visualization\nEnergy: {calculate_energy(positions, sequence)}")
+    plt.show()
+
+
+
+# Run the simulation
+best_positions, best_energy = monte_carlo_folding(sequence)
+print("Best positions:", best_positions)
+print("Best energy:", best_energy)
