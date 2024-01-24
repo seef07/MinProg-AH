@@ -55,3 +55,8 @@ iterativegreed = Score: -18; time: 27.30
 Monte Carlo = Score: -18; time: 9.78
 
 
+
+Notes/TODO :
+sla de bondscore elke iteratie op en plot vervolgnes de bondscore per iteratie. Vergelijk die met andere algoritmes
+
+
