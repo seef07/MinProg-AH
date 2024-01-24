@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 
 from heuristics import altheuristic, currentletter, compactness_heuristic, folding_heuristic
+
 sequence = "HHPHHHPHPHHHPH"
 
 energy_matrix = {
@@ -144,6 +145,7 @@ def get_possible_actions(state): ##check
 
 def is_valid_configuration(positions): ##check
     return len(positions) == len(set(positions))
+########################
 
 
 ##############################################################
@@ -157,13 +159,40 @@ def update_policy_weights(episode_data, current_weights, learning_rate):
             if reward > 0 and heuristic_influence > 0 or reward < 0 and heuristic_influence  < 0:
                 updated_weights[i] += learning_rate 
             elif reward > 0 and heuristic_influence < 0 or reward < 0 and heuristic_influence > 0:
-                updated_weights -= learning_rate
+                updated_weights[i] -= learning_rate
 
     return updated_weights
 
 ############################## heuristics #################
 def compute_heuristic_score(state, action, policy_weights):
-    total = 1
+    nextstate = apply_action(state, action)
+
+    altscore = altheuristic(sequence, action[0])
+    ptscore = currentletter(sequence, action[0])
+    compactscore = compactness_heuristic(state, nextstate)
+    patternscore = folding_heuristic(sequence, action[0])
+    rewardscore = compute_reward(nextstate, state)
+
+    # List of individual heuristic scores
+    heuristic_scores = [altscore, ptscore, compactscore, patternscore, rewardscore]
+
+    # Calculate the total score using policy weights
+    total = sum(weight * score for weight, score in zip(policy_weights, heuristic_scores))
+
     return total
 
 ###########################################################
+
+def estimate_heuristic_influence(i, state, action):
+    nextstate = apply_action(state, action)
+
+    if i == 0:
+        return altheuristic(sequence, action[0])
+    if i == 1:
+        return currentletter(sequence, action[0])
+    if i == 2:
+        return compactness_heuristic(state, nextstate)
+    if i == 3:
+        return folding_heuristic(sequence, action[0])
+    if i == 4:
+        return compute_reward(nextstate, state)
