@@ -7,8 +7,10 @@ from heuristics import altheuristic, currentletter, compactness_heuristic, foldi
 sequence = "HHPHHHPHPHHHPH"
 
 energy_matrix = {
-    ##
+    'HH': -1, 'CC': -5, 'CH': -1, 'HC':-1, 
+    'HP': 0, 'PH': 0, 'PP': 0, 'PC': 0, 'CP': 0
 }
+
 
 policy_weights = [0.2,0.2,0.2,0.2,0.2]
 
