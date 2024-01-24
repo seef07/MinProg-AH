@@ -64,3 +64,17 @@ def select_action():
     best_actions = [action in action, score in zip(possible_actions,action_scores) if score == max_score]
     selected_action = random.choice(best_actions)
     return select_action
+
+def update_policy_weights(episode_data, current_weights, learning_rate):
+    updated_weights = current_weights.copy()
+
+    for state, action, reward in episode_data:
+        for i in range(len(current_weights)):
+            heuristic_influence = estimate_heuristic_influence(i, state, action)
+
+            if reward > 0 and heuristic_influence > 0 or reward < 0 and heuristic_influence  < 0:
+                updated_weights[i] += learning_rate 
+            elif reward > 0 and heuristic_influence < 0 or reward < 0 and heuristic_influence > 0:
+                updated_weights -= learning_rate
+
+    return updated_weights
