@@ -17,10 +17,6 @@ data = [(i, 0, amino_acid) for i, amino_acid in enumerate(sequence)]
 
 print(data[1])
 
-def dompute_heuristic_score(state, action, policy_weights):
-    total = 1
-    return total
-
 def reward_function(positions, sequence):
     energy = 0
     for i in range(len(sequence)):
@@ -51,8 +47,8 @@ def policy_gradient_main_loop(protein_sequence, num_episodes, learning_rate):
         policy_weights = update_policy_weights(episode_data, policy_weights, learning_rate)
 
     return policy_weights
-
-def select_action():
+##################ACTION####################################
+def select_action(state, policy_weights):
     possible_actions = get_possible_actions(state)
     action_scores = []
 
@@ -61,10 +57,45 @@ def select_action():
         action_scores.appemd(score)
 
     max_score = max(action_scores)
-    best_actions = [action in action, score in zip(possible_actions,action_scores) if score == max_score]
+    best_actions = [action for action, score in zip(possible_actions,action_scores) if score == max_score]
     selected_action = random.choice(best_actions)
-    return select_action
 
+    return selected_action
+
+def apply_action(state, index, clockwise=True):
+    current_state = [list(sequence) for sequence in state]  # Convert tuples to lists for mutability
+    positions = [(sequence[0], sequence[1]) for sequence in state]
+
+    if index <= 0 or index >= len(positions) - 1:
+        return current_state
+
+    pivot = positions[index]
+    new_positions = positions.copy()
+    for i in range(index + 1, len(positions)):
+        dx, dy = positions[i][0] - pivot[0], positions[i][1] - pivot[1]
+        if clockwise:
+            new_positions[i] = (pivot[0] - dy, pivot[1] + dx)
+        else:
+            new_positions[i] = (pivot[0] + dy, pivot[1] - dx)
+
+    if is_valid_configuration(new_positions):   
+        for i, position in enumerate(new_positions):
+            current_state[i][0] = position[0]
+            current_state[i][1] = position[1]
+        return current_state
+
+    return current_state
+
+
+
+
+
+def is_valid_configuration(positions):
+    return len(positions) == len(set(positions))
+
+print(apply_action(data, 4, True))
+print(data)
+##############################################################
 def update_policy_weights(episode_data, current_weights, learning_rate):
     updated_weights = current_weights.copy()
 
@@ -78,3 +109,10 @@ def update_policy_weights(episode_data, current_weights, learning_rate):
                 updated_weights -= learning_rate
 
     return updated_weights
+
+############################## heuristics #################
+def dompute_heuristic_score(state, action, policy_weights):
+    total = 1
+    return total
+
+###########################################################
