@@ -22,3 +22,10 @@ def dompute_heuristic_score(state, action, policy_weights):
     return total
 
 def reward_function(positions, sequence):
+    energy = 0
+    for i in range(len(sequence)):
+        for j in range(i + 2, len(sequence)):  # Start from i+2 to skip consecutive amino acids
+            if abs(positions[i][0] - positions[j][0]) + abs(positions[i][1] - positions[j][1]) == 1:
+                pair = ''.join(sorted([sequence[i], sequence[j]]))
+                energy += energy_matrix[pair]
+    return energy
