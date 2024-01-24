@@ -57,8 +57,18 @@ Monte Carlo = Score: -18; time: 9.78
 #### Langere sequence ?
 Sequence: PPPHHPPHHPPPPPHHHHHHHPPHHPPPPHHPPHPP
 
+<<<<<<< HEAD
 Iterative greedy. Score: -5 ; time: 30.081570625305176 seconds
 
 simulatedAnealing. Score: -9; time: 6.57  
 
 Monte carlo. Score: -11; Time: Unknown but not more then 10 seconds.
+=======
+
+Notes/TODO :
+sla de bondscore elke iteratie op en plot vervolgnes de bondscore per iteratie. Vergelijk die met andere algoritmes
+Convergence met temperatuur visualiseren
+Opdrachten: Objective function -> UpperBound Lowerbound; Constraints toevoegen. Minimaal 2.
+Introductie - methode - resultaten - discussie - conclusie
+Fress
+>>>>>>> 1d54a4cee9ce3cacee771d78340a1f6676e561d7
