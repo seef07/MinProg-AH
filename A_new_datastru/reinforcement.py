@@ -33,6 +33,7 @@ def reward_function(positions, sequence):
 def compute_reward(new_state, current_state):
     ##parameter preperation
     ## return new - current
+    return True
 
 def policy_gradient_main_loop(protein_sequence, num_episodes, learning_rate):
     for episode in range(num_episodes):
@@ -51,3 +52,15 @@ def policy_gradient_main_loop(protein_sequence, num_episodes, learning_rate):
 
     return policy_weights
 
+def select_action():
+    possible_actions = get_possible_actions(state)
+    action_scores = []
+
+    for action in possible_actions:
+        score = compute_heuristic_score(state, action, policy_weights)
+        action_scores.appemd(score)
+
+    max_score = max(action_scores)
+    best_actions = [action in action, score in zip(possible_actions,action_scores) if score == max_score]
+    selected_action = random.choice(best_actions)
+    return select_action
