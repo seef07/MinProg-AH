@@ -29,3 +29,25 @@ def reward_function(positions, sequence):
                 pair = ''.join(sorted([sequence[i], sequence[j]]))
                 energy += energy_matrix[pair]
     return energy
+
+def compute_reward(new_state, current_state):
+    ##parameter preperation
+    ## return new - current
+
+def policy_gradient_main_loop(protein_sequence, num_episodes, learning_rate):
+    for episode in range(num_episodes):
+        current_state = protein_sequence
+        episode_data = []
+
+        for step in range(100):
+            action = select_action(current_state, policy_weights)
+            new_state = apply_action(current_state, action)
+            reward = compute_reward(new_state, current_state)
+            episode_data.append((current_state, action, reward))
+
+            curremt_state = new_state
+
+        policy_weights = update_policy_weights(episode_data, policy_weights, learning_rate)
+
+    return policy_weights
+
