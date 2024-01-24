@@ -10,6 +10,31 @@ def distance_heuristic(state):
         total_distance += state.nodes[i].distance_to(state.nodes[i + 1])
     return total_distance
 
+def altheuristic(protein_sequence, fold_index):
+    hydrophobic = {'H'}  # Set of hydrophobic residue types
+    polar = {'P'}  # Set of polar residue types
+
+    # Define the range to consider around the folding point
+    window_size = 4  # Adjust as needed
+    start = max(0, fold_index - window_size)
+    end = min(len(protein_sequence), fold_index + window_size + 1)
+
+    segment = protein_sequence[start:end]
+
+    hydrophobic_count = 0
+    polar_count = 0
+    for residue in segment:
+        if residue in hydrophobic:
+            hydrophobic_count += 1
+        elif residue in polar:
+            polar_count += 1
+
+    if hydrophobic_count + polar_count == 0:
+        return 0  # Avoid division by zero
+
+    score = hydrophobic_count / (hydrophobic_count + polar_count)
+    return score
+
 ########################letter p ####################
 def currentletter(protein_sequence, fold_index):
     """
