@@ -2,14 +2,8 @@
 from protein_folding.protein import Protein
 from protein_folding.node import Node
 
-# Example Heuristic 1: Distance Heuristic
-def distance_heuristic(state):
-    # Evaluate state based on the total or average distance between nodes
-    total_distance = 0
-    for i in range(len(state.nodes) - 1):
-        total_distance += state.nodes[i].distance_to(state.nodes[i + 1])
-    return total_distance
 
+###########alt heuristic@@@@@@@@@@
 def altheuristic(protein_sequence, fold_index):
     hydrophobic = {'H'}  # Set of hydrophobic residue types
     polar = {'P'}  # Set of polar residue types
