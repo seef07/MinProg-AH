@@ -13,7 +13,7 @@ energy_matrix = {
 }
 
 
-policy_weights = [-1.2, -0.2, -1.2, -0.2, -1.2]
+policy_weights = [-0.27 , -0.122, -0.035, -0.07, 0.13]
 
 
 
@@ -48,15 +48,18 @@ def compute_reward(new_state, current_state): ##check
     delta = -(reward1 - reward0)
     return delta
 
-
+scores_per_iteration = []
 def policy_gradient_main_loop(protein_sequence, num_episodes, learning_rate, policy_weights):
+    global scores_per_iteration 
     bestscore = 0
     beststate = protein_sequence 
+    i = 0
     for episode in range(num_episodes):
         current_state = protein_sequence
         episode_data = []
-
+        print("start")
         for step in range(10000):
+            i += 1
             action = select_action(current_state, policy_weights)  # Use heuristic
             new_state = apply_action(current_state, action[0], action[1])  # Apply action
             reward = compute_reward(new_state, current_state)  # Compute reward
@@ -65,7 +68,7 @@ def policy_gradient_main_loop(protein_sequence, num_episodes, learning_rate, pol
                 bestscore = bondscore
                 beststate = new_state
             episode_data.append((current_state, action, reward))
-
+            scores_per_iteration.append((i, bondscore))
             current_state = new_state
 
         print("#################################################################################################")
@@ -77,8 +80,12 @@ def policy_gradient_main_loop(protein_sequence, num_episodes, learning_rate, pol
 def extract_positions(state):
     return [(x, y) for x, y, _ in state]
 
+iteration = 0
 ##################ACTION#############################################
-def select_action(state, policy_weights):
+def select_action(state, policy_weights, start_temp=1.0, end_temp=0.01):
+    global iteration
+    iteration += 1
+    temp = start_temp - iteration * (start_temp - end_temp) / 100000
     possible_actions = get_possible_actions(state) #check
     action_scores = []
 
@@ -89,6 +96,15 @@ def select_action(state, policy_weights):
     max_score = max(action_scores)
     best_actions = [action for action, score in zip(possible_actions,action_scores) if score == max_score]
     selected_action = random.choice(best_actions)
+    new_state = apply_action(state, selected_action[0], selected_action[1])  
+    new_energy = reward_function(extract_positions(new_state), sequence)
+    current_energy = reward_function(extract_positions(state), sequence)
+    exp_argument = (new_energy - current_energy) / temp
+    # Cap the argument to avoid overflow
+    capped_argument = min(exp_argument, 1)  # 20 is an arbitrary cap, adjust as needed
+
+    if random.random() < math.exp(capped_argument):
+        selected_action = random.choice(possible_actions)
 
     return selected_action
 
@@ -169,7 +185,7 @@ def update_policy_weights(episode_data, current_weights, learning_rate):
 
             if reward > 0 and heuristic_influence > 0 or reward < 0 and heuristic_influence  < 0:
                 updated_weights[i] += learning_rate 
-            elif reward > 0 and heuristic_influence <= 0 or reward <= 0 and heuristic_influence > 0:
+            elif reward > 0 and heuristic_influence < 0 or reward < 0 and heuristic_influence > 0:
                 updated_weights[i] -= learning_rate
     return updated_weights
 
@@ -230,9 +246,20 @@ def visualize_protein(state):
     plt.show()
 
 # Example usage
-state = [[0, 0, 'H'], [1, 0, 'H'], [1, -1, 'P'], [0, -1, 'C'], [-1, -1, 'H'], [-2, -1, 'H'], [-2, -2, 'P'], [-1, -2, 'C'], [0, -2, 'C'], [1, -2, 'P'], [2, -2, 'C'], [3, -2, 'P'], [4, -2, 'P'], [5, -2, 'H'], [6, -2, 'H'], [7, -2, 'H'], [8, -2, 'H'], [8, -3, 'P'], [7, -3, 'P'], [6, -3, 'H'], [5, -3, 'C'], [4, -3, 'H'], [3, -3, 'P'], [2, -3, 'H'], [1, -3, 'P'], [0, -3, 'H'], [-1, -3, 'C'], [-2, -3, 'H'], [-3, -3, 'P'], [-4, -3, 'P']]
+state =   [[0, 0, 'H'], [1, 0, 'H'], [1, 1, 'P'], [2, 1, 'C'], [3, 1, 'H'], [4, 1, 'H'], [4, 0, 'P'], [3, 0, 'C'], [2, 0, 'C'], [2, -1, 'P'], [3, -1, 'C'], [3, -2, 'P'], [2, -2, 'P'], [1, -2, 'H'], [1, -1, 'H'], [0, -1, 'H'], [0, -2, 'H'], [0, -3, 'P'], [-1, -3, 'P'], [-1, -2, 'H'], [-1, -1, 'C'], [-1, 0, 'H'], [-1, 1, 'P'], [-1, 2, 'H'], [0, 2, 'P'], [1, 2, 'H'], [2, 2, 'C'], [3, 2, 'H'], [3, 3, 'P'], [4, 3, 'P']]
 visualize_protein(state)
 
 
 
-print(policy_gradient_main_loop(protein_sequence = data, num_episodes=15, learning_rate= 0.1, policy_weights= policy_weights))
+print(policy_gradient_main_loop(protein_sequence = data, num_episodes=15, learning_rate= 0.001, policy_weights= policy_weights))
+
+steps, bondscores = zip(*scores_per_iteration)
+
+# Create a plot
+plt.figure(figsize=(10, 6))
+plt.plot(steps, bondscores, marker='o')  # 'o' creates circular markers on each data point
+plt.title('Bond Scores Per Iteration')
+plt.xlabel('Iteration Step')
+plt.ylabel('Bond Score')
+plt.grid(True)
+plt.show()
