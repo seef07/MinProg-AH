@@ -3,9 +3,9 @@ import math
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 
-from heuristics import altheuristic, currentletter, compactness_heuristic, folding_heuristic
+from heuristics.heuristics import altheuristic, currentletter, compactness_heuristic, folding_heuristic
 
-sequence = "HHPHHHPHPHHHPH"
+sequence = "HHPCHHPCCPCPPHHHHPPHCHPHPHCHPP"
 
 energy_matrix = {
     'HH': -1, 'CC': -5, 'CH': -1, 'HC':-1, 
@@ -13,9 +13,9 @@ energy_matrix = {
 }
 
 
-policy_weights = [0.2,0.2,0.2,0.2,0.2]
+policy_weights = [-1.2, -0.2, -1.2, -0.2, -1.2]
 
-episodes = 1000
+
 
 data = [(i, 0, amino_acid) for i, amino_acid in enumerate(sequence)]
 
@@ -49,22 +49,33 @@ def compute_reward(new_state, current_state): ##check
     return delta
 
 
-def policy_gradient_main_loop(protein_sequence, num_episodes, learning_rate): ## select action ->heuristiek
+def policy_gradient_main_loop(protein_sequence, num_episodes, learning_rate, policy_weights):
+    bestscore = 0
+    beststate = protein_sequence 
     for episode in range(num_episodes):
         current_state = protein_sequence
         episode_data = []
 
-        for step in range(100):
-            action = select_action(current_state, policy_weights) # Alleen nog heuristic
-            new_state = apply_action(current_state, action) ## Check
-            reward = compute_reward(new_state, current_state) #  Check
+        for step in range(10000):
+            action = select_action(current_state, policy_weights)  # Use heuristic
+            new_state = apply_action(current_state, action[0], action[1])  # Apply action
+            reward = compute_reward(new_state, current_state)  # Compute reward
+            bondscore = reward_function(extract_positions(new_state), sequence)
+            if bestscore > bondscore:
+                bestscore = bondscore
+                beststate = new_state
             episode_data.append((current_state, action, reward))
 
             current_state = new_state
 
+        print("#################################################################################################")
+        print(f'bestscore: {bestscore} Beststate: {beststate}')
         policy_weights = update_policy_weights(episode_data, policy_weights, learning_rate)
-
+        print(policy_weights)
     return policy_weights
+
+def extract_positions(state):
+    return [(x, y) for x, y, _ in state]
 
 ##################ACTION#############################################
 def select_action(state, policy_weights):
@@ -73,7 +84,7 @@ def select_action(state, policy_weights):
 
     for action in possible_actions:
         score = compute_heuristic_score(state, action, policy_weights)
-        action_scores.appemd(score)
+        action_scores.append(score)
 
     max_score = max(action_scores)
     best_actions = [action for action, score in zip(possible_actions,action_scores) if score == max_score]
@@ -158,14 +169,13 @@ def update_policy_weights(episode_data, current_weights, learning_rate):
 
             if reward > 0 and heuristic_influence > 0 or reward < 0 and heuristic_influence  < 0:
                 updated_weights[i] += learning_rate 
-            elif reward > 0 and heuristic_influence < 0 or reward < 0 and heuristic_influence > 0:
+            elif reward > 0 and heuristic_influence <= 0 or reward <= 0 and heuristic_influence > 0:
                 updated_weights[i] -= learning_rate
-
     return updated_weights
 
 ############################## heuristics #################
 def compute_heuristic_score(state, action, policy_weights):
-    nextstate = apply_action(state, action)
+    nextstate = apply_action(state, action[0], action[1])
 
     altscore = altheuristic(sequence, action[0])
     ptscore = currentletter(sequence, action[0])
@@ -173,18 +183,19 @@ def compute_heuristic_score(state, action, policy_weights):
     patternscore = folding_heuristic(sequence, action[0])
     rewardscore = compute_reward(nextstate, state)
 
-    # List of individual heuristic scores
+    # Debugging: Print the heuristic scores
+
     heuristic_scores = [altscore, ptscore, compactscore, patternscore, rewardscore]
 
-    # Calculate the total score using policy weights
     total = sum(weight * score for weight, score in zip(policy_weights, heuristic_scores))
 
     return total
 
+
 ###########################################################
 
 def estimate_heuristic_influence(i, state, action):
-    nextstate = apply_action(state, action)
+    nextstate = apply_action(state, action[0], action[1])
 
     if i == 0:
         return altheuristic(sequence, action[0])
@@ -196,3 +207,32 @@ def estimate_heuristic_influence(i, state, action):
         return folding_heuristic(sequence, action[0])
     if i == 4:
         return compute_reward(nextstate, state)
+    
+import matplotlib.pyplot as plt
+
+def visualize_protein(state):
+    # Extract positions and sequence from the state
+    positions = [(x, y) for x, y, _ in state]
+    sequence = [acid for _, _, acid in state]
+
+    # Map each amino acid type to a color
+    colors = {'H': 'red', 'P': 'blue', 'C': 'green'}
+    color_sequence = [colors[acid] for acid in sequence]
+
+    x, y = zip(*positions)
+    plt.figure(figsize=(10, 10))
+    plt.scatter(x, y, color=color_sequence)
+
+    for i in range(len(positions) - 1):
+        plt.plot([positions[i][0], positions[i + 1][0]], [positions[i][1], positions[i + 1][1]], color='black')
+
+    plt.title(f"Protein Folding Visualization\nEnergy: {reward_function(positions, sequence)}")
+    plt.show()
+
+# Example usage
+state = [[0, 0, 'H'], [1, 0, 'H'], [1, -1, 'P'], [0, -1, 'C'], [-1, -1, 'H'], [-2, -1, 'H'], [-2, -2, 'P'], [-1, -2, 'C'], [0, -2, 'C'], [1, -2, 'P'], [2, -2, 'C'], [3, -2, 'P'], [4, -2, 'P'], [5, -2, 'H'], [6, -2, 'H'], [7, -2, 'H'], [8, -2, 'H'], [8, -3, 'P'], [7, -3, 'P'], [6, -3, 'H'], [5, -3, 'C'], [4, -3, 'H'], [3, -3, 'P'], [2, -3, 'H'], [1, -3, 'P'], [0, -3, 'H'], [-1, -3, 'C'], [-2, -3, 'H'], [-3, -3, 'P'], [-4, -3, 'P']]
+visualize_protein(state)
+
+
+
+print(policy_gradient_main_loop(protein_sequence = data, num_episodes=15, learning_rate= 0.1, policy_weights= policy_weights))

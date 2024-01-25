@@ -1,9 +1,5 @@
-# Import necessary modules
-from protein_folding.protein import Protein
-from protein_folding.node import Node
 
-
-###########alt heuristic@@@@@@@@@@
+###########alt heuristic############
 def altheuristic(protein_sequence, fold_index):
     hydrophobic = {'H'}  # Set of hydrophobic residue types
     polar = {'P'}  # Set of polar residue types
@@ -33,16 +29,18 @@ def altheuristic(protein_sequence, fold_index):
 def currentletter(protein_sequence, fold_index):
     """
     Apply the folding heuristic for a given fold index in the protein sequence.
+    Returns 1 if the amino acid at the fold index is 'P', otherwise returns 0.
     """
-    # Ensure the fold_index is within valid range
+    # Ensure the fold_index is within the valid range
     if fold_index < 2 or fold_index > len(protein_sequence) - 3:
         return 0
 
-    # Extract the pattern around the fold point
+    # Extract the amino acid at the fold point
     p = protein_sequence[fold_index]
 
-    if p == 'P':
-        return 1
+    # Return 1 if the amino acid is 'P', else return 0
+    return 1 if p == 'P' else 0
+
 
 ##############Energy heuristic#####################################
 
@@ -52,11 +50,17 @@ def compactness_heuristic(current_state, next_state):
     def calculate_compactness(state):
         if not state:
             return 0
+        # Calculate the average coordinates
         avg_x = sum(node[0] for node in state) / len(state)
         avg_y = sum(node[1] for node in state) / len(state)
+
+        # Calculate the variance
         variance = sum((node[0] - avg_x)**2 + (node[1] - avg_y)**2 for node in state) / len(state)
+
+        # Return the inverse of variance as a measure of compactness
         return 1 / (1 + variance)
 
+    # Calculate compactness for current and next state and return the difference
     return calculate_compactness(next_state) - calculate_compactness(current_state)
 
 ###################pattern heuristic#####################
