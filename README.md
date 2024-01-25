@@ -54,16 +54,25 @@ iterativegreed = Score: -18; time: 27.30
 
 Monte Carlo = Score: -18; time: 9.78
 
+Run1 : Reinforcement learning: Score: -21  [[0, 0, 'H'], [1, 0, 'H'], [2, 0, 'P'], [2, 1, 'C'], [1, 1, 'H'], [1, 2, 'H'], [1, 3, 'P'], [2, 3, 'C'], [2, 2, 'C'], [3, 2, 'P'], [3, 3, 'C'], [4, 3, 'P'], [5, 3, 'P'], [6, 3, 'H'], [6, 4, 'H'], [6, 5, 'H'], [5, 5, 'H'], [5, 4, 'P'], [4, 4, 'P'], [3, 4, 'H'], [2, 4, 'C'], [1, 4, 'H'], [0, 4, 'P'], [-1, 4, 'H'], [-1, 3, 'P'], [0, 3, 'H'], [0, 2, 'C'], [0, 1, 'H'], [-1, 1, 'P'], [-1, 0, 'P']]
+
+Run 2: Reinforcement learning score: -22 ->: [[0, 0, 'H'], [1, 0, 'H'], [2, 0, 'P'], [2, -1, 'C'], [1, -1, 'H'], [0, -1, 'H'], [0, -2, 'P'], [1, -2, 'C'], [2, -2, 'C'], [2, -3, 'P'], [1, -3, 'C'], [1, -4, 'P'], [1, -5, 'P'], [2, -5, 'H'], [3, -5, 'H'], [4, -5, 'H'], [4, -4, 'H'], [3, 
+-4, 'P'], [3, -3, 'P'], [3, -2, 'H'], [3, -1, 'C'], [4, -1, 'H'], [4, -2, 'P'], [4, -3, 'H'], [5, -3, 'P'], [5, -4, 'H'], [5, -5, 'C'], [6, -5, 'H'], [7, -5, 'P'], [8, -5, 'P']]
+weights run 2: [-0.22899999999999998, -0.10699999999999998, 8.84000000000054, -0.07, 10.988999999999349]
+
+Run 3: Reinforcement leanring: bestscore: -24 Beststate: [[0, 0, 'H'], [1, 0, 'H'], [1, 1, 'P'], [2, 1, 'C'], [3, 1, 'H'], [4, 1, 'H'], [4, 0, 'P'], [3, 0, 'C'], [2, 0, 'C'], [2, -1, 'P'], [3, -1, 'C'], [3, -2, 'P'], [2, -2, 'P'], [1, -2, 'H'], [1, -1, 'H'], [0, -1, 'H'], [0, -2, 'H'], [0, -3, 'P'], [-1, -3, 'P'], [-1, -2, 'H'], [-1, -1, 'C'], [-1, 0, 'H'], [-1, 1, 'P'], [-1, 2, 'H'], [0, 2, 'P'], [1, 2, 'H'], [2, 2, 'C'], [3, 2, 'H'], [3, 3, 'P'], [4, 3, 'P']]
+[-0.26, -0.12, 1.088999999999991, -0.07, 2.0199999999998886]
+
+
 #### Langere sequence ?
 Sequence: PPPHHPPHHPPPPPHHHHHHHPPHHPPPPHHPPHPP
 
-<<<<<<< HEAD
 Iterative greedy. Score: -5 ; time: 30.081570625305176 seconds
 
 simulatedAnealing. Score: -9; time: 6.57  
 
 Monte carlo. Score: -11; Time: Unknown but not more then 10 seconds.
-=======
+
 
 Notes/TODO :
 sla de bondscore elke iteratie op en plot vervolgnes de bondscore per iteratie. Vergelijk die met andere algoritmes
@@ -71,4 +80,3 @@ Convergence met temperatuur visualiseren
 Opdrachten: Objective function -> UpperBound Lowerbound; Constraints toevoegen. Minimaal 2.
 Introductie - methode - resultaten - discussie - conclusie
 Fress
->>>>>>> 1d54a4cee9ce3cacee771d78340a1f6676e561d7

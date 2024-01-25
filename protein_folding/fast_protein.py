@@ -136,3 +136,27 @@ def fast_validate_protein(order: Iterable[int]):
 		taken_positions[idx] = 1
 
 	return True
+
+def	fast_validate_protein_action(order, action):
+	order[action[0]] = action[1]
+	y_mult = len(order) + 1
+	x_mult = y_mult * y_mult + 1
+	taken_positions = np.zeros(y_mult ** 3)
+
+	x = y = z = 0
+	taken_positions[x * x_mult + y * y_mult + z] = 1
+
+	for direction in order:
+		new_node_delta = _direction_to_delta[direction + 3]
+		x += new_node_delta[0]
+		y += new_node_delta[1]
+		z += new_node_delta[2]
+
+		idx = x * x_mult + y * y_mult + z
+		# Check if new position is already taken
+		if taken_positions[idx] == 1:
+			return False
+
+		taken_positions[idx] = 1
+	return True
+

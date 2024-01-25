@@ -204,12 +204,9 @@ class Node:
         test_protein = self.protein
         test_protein.order[self.id] = direction
 
-        if fast_validate_protein(test_protein.get_order()):
-            print("Valid!!")
-            self.directionfrom_previous = direction
-            self.protein.order[self.id] = direction
-        else:
-            print("Invalid!!")
+
+        self.directionfrom_previous = direction
+        self.protein.order[self.id] = direction
         
         
 
@@ -218,9 +215,8 @@ class Node:
             self.next.cascade_position(delta_pos)
 
         # Add new position to the positions set
-        if not ignore_pos_set:
-            assert self.pos not in self.protein.pos_to_node
-            self.protein.pos_to_node[self.pos] = self
+
+        self.protein.pos_to_node[self.pos] = self
 
         # Set node to not-ghost
         self.ghost = False

@@ -5,7 +5,7 @@ from protein_folding.algorithms import Regression
 
 def main():
 	create_experiment_folders()
-	sequence = 'HHPHHHPH'
+	sequence = 'PPPHHPPHHPPPPPHHHHHHHPPHHPPPPHHPPHPP'
 	protein = Protein(sequence)
 
 	algorithm = Regression(protein, dimensions=2, debug=True)
