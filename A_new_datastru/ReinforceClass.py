@@ -19,3 +19,8 @@ class ProteinFoldingSimulator:
 
     def visualize(self):
         pass
+
+class State:
+    def __init__(self, positions, sequence):
+        self.positions = positions
+        self.sequence = sequence
