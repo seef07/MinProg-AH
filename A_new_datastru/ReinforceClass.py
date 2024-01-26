@@ -1,4 +1,5 @@
 import random
+import math
 
 class ProteinFoldingSimulator:
     def __init__(self, sequence, energy_matrix, policy_weights):
@@ -54,9 +55,9 @@ class ActionSelector:
         max_score = max(action_scores)
         best_actions = [action for action, score in zip(possible_actions,action_scores) if score == max_score]
         selected_action = random.choice(best_actions)
-        new_state = apply_action(state, selected_action[0], selected_action[1])  ######### Update
-        new_energy = reward_function(extract_positions(new_state), sequence) ############ Update
-        current_energy = reward_function(extract_positions(state), sequence) ########## Update
+        new_state = state.apply_action(state, selected_action[0], selected_action[1])  
+        new_energy = state.reward_function(new_state) 
+        current_energy = state.reward_function(state)     
         exp_argument = (new_energy - current_energy) / temp
 
         capped_argument = min(exp_argument, 1) 
