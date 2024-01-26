@@ -32,3 +32,7 @@ class State:
     def __init__(self, positions, sequence):
         self.positions = positions
         self.sequence = sequence
+
+class Heuristic:
+    def evaluate(self, state):
+        pass
