@@ -20,6 +20,14 @@ class ProteinFoldingSimulator:
     def visualize(self):
         pass
 
+class ActionSelector:
+    def __init__(self, policy_weights):
+        self.policy_weights = policy_weights
+
+    def select_action(self, state):
+        pass
+
+
 class State:
     def __init__(self, positions, sequence):
         self.positions = positions
