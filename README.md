@@ -3,6 +3,32 @@
 Even ter veruidelijk van waar alles ligt. Met groepje Amadeus werkte ik in de mainfolder aan een reinforcemenent Q learning algoritme. Die is nog niet af en moet nog aan geprogrammeerd worden. Die kan je vinden in /protein_folding/algorithms/reinforcement.
 
 Ik besefte echter dat het stuctuur iets te overingewikkeld is voor zo een simpele proteine vouwprobleem als deze, dus dat verdiend ook een veel simpelere structuur. Vandaar een nieuw mapje A_new_datastru. 
+## Reinforcement Inteligence algorithm
+
+### Algemeen
+
+We beginnen met een sequentie van aminozuren en een startconfiguratie waarbij alle aminozuren op dezelfde lijn liggen.
+
+#### Heuristieken:
+Het algoritme maakt gebruik van vijf heuristieken om beslissingen te nemen over hoe de aminozuren moeten worden verplaatst. Deze heuristieken omvatten zaken als het proberen te voorkomen van ongunstige interacties tussen aminozuren, het maximaliseren van compactheid en het volgen van een patroon in de sequentie.
+
+#### Vouwen:
+In elke iteratie van het algoritme wordt een aminozuur geselecteerd op basis van de heuristieken, en vervolgens wordt bepaald of het aminozuur met de klok mee of tegen de klok in moet worden verplaatst. Dit wordt gedaan om de configuratie te optimaliseren volgens de heuristieken en de energiematrix.
+
+#### Beloning en Evaluatie:
+Nadat een aminozuur is verplaatst, wordt de resulterende configuratie geëvalueerd aan de hand van een beloningsfunctie. Deze functie meet hoe goed de nieuwe configuratie is in termen van energie, waarbij gunstige configuraties lagere energiewaarden hebben.
+
+#### Update:
+De algoritme past vervolgens zijn beleid aan op basis van de beloningen die zijn ontvangen. Als een actie positief heeft bijgedragen aan het verminderen van de energie, worden de gewichten van de bijbehorende heuristieken verhoogd. Als een actie negatief heeft bijgedragen, worden de gewichten verlaagd.
+
+#### Herhaling:
+Het bovenstaande proces wordt herhaald voor meerdere iteraties of "episodes". Gedurende deze afleveringen wordt geprobeerd om de energie van de configuratie te minimaliseren en zo een optimale vouwing te bereiken.
+
+### Waarom dit algoritme? 
+Eenvoudig aan te passen: Het algoritme maakt gebruik van heuristieken en gewichten, waardoor het gemakkelijk kan worden aangepast aan verschillende eiwitten of problemen door de heuristieken en gewichten aan te passen.
+Lokale zoekmethode: Het is een lokale zoekmethode, wat betekent dat het probeert de huidige oplossing te verbeteren zonder het gehele zoekruimte te verkennen, wat efficiënt kan zijn voor grote eiwitsequenties.
+Flexibiliteit: Het algoritme kan worden aangepast om verschillende doelstellingen en beperkingen in te bouwen, afhankelijk van de specifieke behoeften van het probleem.
+Heuristische aanpak: Het maakt gebruik van heuristieken die zijn gebaseerd op intuïtie en kennis van het eiwitten vouwprobleem, wat kan helpen bij het vinden van goede oplossingen.
 
 ## Monte-Carlo folding algoritme
 te vinden in => A_new_datastru.montecarlo.py
