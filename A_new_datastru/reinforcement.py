@@ -5,7 +5,7 @@ import matplotlib.colors as mcolors
 
 from heuristics.heuristics import altheuristic, currentletter, compactness_heuristic, folding_heuristic
 
-sequence = "HHPCHHPCCPCPPHHHHPPHCHPHPHCHPP"
+sequence = "HCPHPHPHCHHHHPCCPPHPPPHPPPPCPPPHPPPHPHHHHCHPHPHPHH"
 
 energy_matrix = {
     'HH': -1, 'CC': -5, 'CH': -1, 'HC':-1, 
@@ -13,7 +13,7 @@ energy_matrix = {
 }
 
 
-policy_weights = [-0.27 , -0.122, -0.035, -0.07, 0.13]
+policy_weights = [0 , 0, 0, 0.5, 0]
 
 
 
@@ -85,7 +85,7 @@ iteration = 0
 def select_action(state, policy_weights, start_temp=1.0, end_temp=0.01):
     global iteration
     iteration += 1
-    temp = start_temp - iteration * (start_temp - end_temp) / 100000
+    temp = start_temp - iteration * (start_temp - end_temp) / 1000
     possible_actions = get_possible_actions(state) #check
     action_scores = []
 
@@ -187,6 +187,8 @@ def update_policy_weights(episode_data, current_weights, learning_rate):
                 updated_weights[i] += learning_rate 
             elif reward > 0 and heuristic_influence < 0 or reward < 0 and heuristic_influence > 0:
                 updated_weights[i] -= learning_rate
+
+            updated_weights[i] = max(min(updated_weights[i], 1), -1)
     return updated_weights
 
 ############################## heuristics #################
@@ -246,12 +248,12 @@ def visualize_protein(state):
     plt.show()
 
 # Example usage
-state =   [[0, 0, 'H'], [1, 0, 'H'], [1, 1, 'P'], [2, 1, 'C'], [3, 1, 'H'], [4, 1, 'H'], [4, 0, 'P'], [3, 0, 'C'], [2, 0, 'C'], [2, -1, 'P'], [3, -1, 'C'], [3, -2, 'P'], [2, -2, 'P'], [1, -2, 'H'], [1, -1, 'H'], [0, -1, 'H'], [0, -2, 'H'], [0, -3, 'P'], [-1, -3, 'P'], [-1, -2, 'H'], [-1, -1, 'C'], [-1, 0, 'H'], [-1, 1, 'P'], [-1, 2, 'H'], [0, 2, 'P'], [1, 2, 'H'], [2, 2, 'C'], [3, 2, 'H'], [3, 3, 'P'], [4, 3, 'P']]
+state =  [[0, 0, 'H'], [1, 0, 'C'], [2, 0, 'P'], [3, 0, 'H'], [4, 0, 'P'], [4, 1, 'H'], [3, 1, 'P'], [2, 1, 'H'], [1, 1, 'C'], [1, 2, 'H'], [1, 3, 'H'], [0, 3, 'H'], [0, 2, 'H'], [0, 1, 'C'], [-1, 1, 'P'], [-1, 2, 'H'], [-1, 3, 'P'], [-1, 4, 'H'], [-1, 5, 'P'], [-1, 6, 'H'], [-1, 7, 'C'], [-1, 8, 'H'], [-2, 8, 'H']]
 visualize_protein(state)
 
 
 
-print(policy_gradient_main_loop(protein_sequence = data, num_episodes=15, learning_rate= 0.001, policy_weights= policy_weights))
+print(policy_gradient_main_loop(protein_sequence = data, num_episodes=150, learning_rate= 0.001, policy_weights= policy_weights))
 
 steps, bondscores = zip(*scores_per_iteration)
 
