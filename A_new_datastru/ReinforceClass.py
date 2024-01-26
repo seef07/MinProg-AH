@@ -1,3 +1,5 @@
+import random
+
 class ProteinFoldingSimulator:
     def __init__(self, sequence, energy_matrix, policy_weights):
         self.sequence = sequence
@@ -33,13 +35,73 @@ class ProteinFoldingSimulator:
     def visualize(self):
         pass
 
+iteration = 0
 class ActionSelector:
     def __init__(self, policy_weights):
-
         self.policy_weights = policy_weights
 
-    def select_action(self, state):
-        pass
+    def select_action(self, state, policy_weights, start_temp=1.0, end_temp=0.01):
+        global iteration
+        iteration += 1
+        temp = start_temp - iteration * (start_temp - end_temp) / 10000             ###UPDATE
+        possible_actions = self._get_possible_actions(state)
+        action_scores = []
+
+        for action in possible_actions:
+            score = compute_heuristic_score(state, action, policy_weights)
+            action_scores.append(score)
+
+        max_score = max(action_scores)
+        best_actions = [action for action, score in zip(possible_actions,action_scores) if score == max_score]
+        selected_action = random.choice(best_actions)
+        new_state = apply_action(state, selected_action[0], selected_action[1])  ######### Update
+        new_energy = reward_function(extract_positions(new_state), sequence) ############ Update
+        current_energy = reward_function(extract_positions(state), sequence) ########## Update
+        exp_argument = (new_energy - current_energy) / temp
+
+        capped_argument = min(exp_argument, 1) 
+
+        if random.random() < math.exp(capped_argument):
+            selected_action = random.choice(possible_actions)
+
+        return selected_action
+
+    def _get_possible_actions(self, state): 
+        list = []
+        for i, part  in enumerate(state):
+            actiontrue = (i, True)
+            actionfalse = (i, False)
+            if self._validate_action(state, actiontrue):
+                list.append(actiontrue)
+            if self._validate_action(state, actionfalse):
+                list.append(actionfalse)
+        return list
+    
+    def _validate_action(state, action, clockwise=True): 
+        state_class = State(state)
+        index = action[0]
+        clockwise = action[1]
+        current_state = [list(sequence) for sequence in state]
+        positions = state_class.positions
+
+        if index <= 0 or index >= len(positions) - 1:
+            return False
+
+        pivot = positions[index]
+        new_positions = positions.copy()
+        for i in range(index + 1, len(positions)):
+            dx, dy = positions[i][0] - pivot[0], positions[i][1] - pivot[1]
+            if clockwise:
+                new_positions[i] = (pivot[0] - dy, pivot[1] + dx)
+            else:
+                new_positions[i] = (pivot[0] + dy, pivot[1] - dx)
+        if state_class.is_valid_configuration(new_positions):   
+            for i, position in enumerate(new_positions):
+                current_state[i][0] = position[0]
+                current_state[i][1] = position[1]
+            return True
+
+        return False
 
 
 class State:
@@ -72,6 +134,9 @@ class State:
 
         return current_state
     
+    def get_positions(self):
+        return [(x, y) for x, y, _ in self.state]
+    
     def is_valid_configuration(positions): 
         return len(positions) == len(set(positions))
 
@@ -86,17 +151,9 @@ class Heuristic:
     
 ##policy_gradient_main_loop
 
-#extract_positions
-    
 #select_action
-    
-#apply action
 
-#validate action
 
-#get possible actions
-
-# is valid
 
 #update policy weight
 
