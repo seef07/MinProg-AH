@@ -109,7 +109,10 @@ class State:
         self.positions = [(x, y) for x, y, _ in state]
         self.sequence = [z for _, _, z in state]
         self.state = state
-
+        self.energy_matrix = {
+                                'HH': -1, 'CC': -5, 'CH': -1, 'HC':-1, 
+                                'HP': 0, 'PH': 0, 'PP': 0, 'PC': 0, 'CP': 0
+                            }
     def apply_action(self, index, clockwise = True):
         current_state = [list(sequence) for sequence in self.state]  # Convert tuples to lists for mutability
         positions = self.positions
@@ -139,19 +142,47 @@ class State:
     
     def is_valid_configuration(positions): 
         return len(positions) == len(set(positions))
+    
+    def reward_function(self):
+        energy = 0
+        for i in range(len(self.sequence)):
+            for j in range(i + 2, len(self.sequence)):  # Start from i+2 to skip consecutive amino acids
+                if abs(self.positions[i][0] - self.positions[j][0]) + abs(self.positions[i][1] - self.positions[j][1]) == 1:
+                    pair = ''.join(sorted([self.sequence[i], self.sequence[j]]))
+                    energy += self.energy_matrix[pair]
+        return energy
+        
+
+    def compute_reward(self, new_state):
+        # Save the current state
+        current_positions, current_sequence = self.positions, self.sequence
+
+        # Update state to the new state
+        self.positions = [(x, y) for x, y, _ in new_state]
+        self.sequence = [z for _, _, z in new_state]
+
+        # Compute the new reward
+        new_reward = self.reward_function()
+
+        # Restore the original state
+        self.positions, self.sequence = current_positions, current_sequence
+
+        # Compute the original reward
+        original_reward = self.reward_function()
+
+        # Compute the change in reward
+        delta = new_reward - original_reward
+        return delta
 
 class Heuristic:
     def evaluate(self, state):
         pass
 
 
-##rewardfunction
-    
-##compute reward
-    
+
 ##policy_gradient_main_loop
 
-#select_action
+#select_action  ---> Heuristis etcetera
 
 
 
