@@ -1,6 +1,7 @@
 import random
 import math
 from heuristics.heuristics import altheuristic, currentletter, compactness_heuristic, folding_heuristic
+import matplotlib.pyplot as plt
 
 class ProteinFoldingSimulator:
     def __init__(self, sequence, policy_weights):
@@ -14,6 +15,7 @@ class ProteinFoldingSimulator:
         self.state = self._initialize_state()
         self.scores_per_iteration = []
         self.beststate = None
+        self.bestscore = 0
 
     def _initialize_state(self):
         return [(i, 0, amino_acid) for i, amino_acid in enumerate(self.sequence)]
@@ -25,24 +27,54 @@ class ProteinFoldingSimulator:
     def _run_episode(self, learning_rate):
         current_state = self.state
         episode_data = []
-        for step in range(10):
+        for step in range(2000):
             action, heuristic_influence = self.action_selector.select_action(current_state)
-            print(action)
-            print(heuristic)
-            new_state = State.apply_action(current_state, action[0], action[1])  # Apply action
-            reward = State.compute_reward(current_state, new_state)  # Compute reward
-            bondscore = State.reward_function(current_state)
-            print(bondscore)
-            if bestscore > bondscore:
-                bestscore = bondscore
+            state_instance = State(current_state)
+            new_state = state_instance.apply_action(action[0], action[1])  # Apply action
+            reward = state_instance.compute_reward(new_state)  # Compute reward
+            bondscore = state_instance.reward_function()
+            if self.bestscore > bondscore:
+                self.bestscore = bondscore
                 self.beststate = new_state
             
-            episode_data.append((current_state, action, reward, heuristic))
+            episode_data.append((current_state, action, reward, heuristic_influence))
             current_state = new_state
+        print(self.bestscore)
+        self.policy_weights = self.update_policy_weights(self.policy_weights, episode_data, learning_rate)
+
+    @staticmethod
+    def update_policy_weights(current_weights, episode_data, learning_rate):
+        updated_weights = current_weights.copy()
+
+        for state, action, reward, heuristic_influence in episode_data:
+            for i in range(len(current_weights)):
+                # Check the sign of reward and the corresponding heuristic influence
+                if reward > 0 and heuristic_influence[i] > 0 or reward < 0 and heuristic_influence[i] < 0:
+                    updated_weights[i] += learning_rate 
+                elif reward > 0 and heuristic_influence[i] < 0 or reward < 0 and heuristic_influence[i] > 0:
+                    updated_weights[i] -= learning_rate
+        return updated_weights
 
 
-    def visualize(self):
-        pass
+    def visualize_protein(self):
+        state = self.beststate
+        # Extract positions and sequence from the state
+        positions = [(x, y) for x, y, _ in state]
+        sequence = [acid for _, _, acid in state]
+
+        # Map each amino acid type to a color
+        colors = {'H': 'red', 'P': 'blue', 'C': 'green'}
+        color_sequence = [colors[acid] for acid in sequence]
+
+        x, y = zip(*positions)
+        plt.figure(figsize=(10, 10))
+        plt.scatter(x, y, color=color_sequence)
+
+        for i in range(len(positions) - 1):
+            plt.plot([positions[i][0], positions[i + 1][0]], [positions[i][1], positions[i + 1][1]], color='black')
+
+        plt.title(f"Protein Folding Visualization\nEnergy: {self.bestscore}")
+        plt.show()
 
 iteration = 0
 class ActionSelector:
@@ -52,7 +84,7 @@ class ActionSelector:
     def select_action(self, state, start_temp=1.0, end_temp=0.01):
         global iteration
         iteration += 1
-        temp = start_temp - iteration * (start_temp - end_temp) / 10
+        temp = start_temp - iteration * (start_temp - end_temp) / 2000
         possible_actions = self._get_possible_actions(state)
         action_scores = []
 
@@ -64,9 +96,11 @@ class ActionSelector:
         max_score = max(action_scores)
         best_actions = [action for action, score in zip(possible_actions,action_scores) if score == max_score]
         selected_action = random.choice(best_actions)
-        new_state = state.apply_action(state, selected_action[0], selected_action[1])  
-        new_energy = state.reward_function(new_state) 
-        current_energy = state.reward_function(state)     
+        state_instance = State(state)
+        new_state = state_instance.apply_action(selected_action[0], selected_action[1])
+        new_state_instance = State(new_state)
+        new_energy = new_state_instance.reward_function()
+        current_energy = state_instance.reward_function()     
         exp_argument = (new_energy - current_energy) / temp
 
         capped_argument = min(exp_argument, 1) 
@@ -88,7 +122,7 @@ class ActionSelector:
                 list.append(actionfalse)
         return list
     
-    def _validate_action(state, action, clockwise=True): 
+    def _validate_action(sself, state, action, clockwise=True): 
         state_class = State(state)
         index = action[0]
         clockwise = action[1]
@@ -124,10 +158,11 @@ class State:
                                 'HH': -1, 'CC': -5, 'CH': -1, 'HC':-1, 
                                 'HP': 0, 'PH': 0, 'PP': 0, 'PC': 0, 'CP': 0
                             }
-    def apply_action(self, index, clockwise = True):
+    def apply_action(self, index, clockwise=True):
         current_state = [list(sequence) for sequence in self.state]  # Convert tuples to lists for mutability
         positions = self.positions
 
+        # Check if the action is valid; if not, return the original state immediately
         if index <= 0 or index >= len(positions) - 1:
             return current_state
 
@@ -140,17 +175,21 @@ class State:
             else:
                 new_positions[i] = (pivot[0] + dy, pivot[1] - dx)
 
-        if self.is_valid_configuration(new_positions):   
-            for i, position in enumerate(new_positions):
-                current_state[i][0] = position[0]
-                current_state[i][1] = position[1]
+        # Check if the new configuration is valid
+        if not self.is_valid_configuration(new_positions):
             return current_state
 
+        # Update the state with new positions
+        for i, position in enumerate(new_positions):
+            current_state[i][0] = position[0]
+            current_state[i][1] = position[1]
         return current_state
+    
     
     def get_positions(self):
         return [(x, y) for x, y, _ in self.state]
     
+    @staticmethod
     def is_valid_configuration(positions): 
         return len(positions) == len(set(positions))
     
@@ -221,10 +260,12 @@ class Heuristic:
 
 
 #update policy weight
-sequence = "HCPHPHPHCHHHHPCCP"
-policy_weights = [0 , 0, 0, 0.5, 0]
+sequence = "HHPCHHPCCPCPPHHHHPPHCHPHPHCHPP"
+policy_weights = [-1, 1, -1, 2, 0.5]
 
 simulator = ProteinFoldingSimulator(sequence, policy_weights)
 simulator.run(num_episodes=15, learning_rate=0.001)
 
-
+print(simulator.bestscore)
+print(simulator.beststate)
+simulator.visualize_protein()
