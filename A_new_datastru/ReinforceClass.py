@@ -2,7 +2,7 @@ import random
 import math
 from heuristics.heuristics import altheuristic, currentletter, compactness_heuristic, folding_heuristic
 import matplotlib.pyplot as plt
-
+import numpy as np 
 class ProteinFoldingSimulator:
     def __init__(self, sequence, policy_weights):
         self.sequence = sequence
@@ -21,8 +21,13 @@ class ProteinFoldingSimulator:
         return [(i, 0, amino_acid) for i, amino_acid in enumerate(self.sequence)]
 
     def run(self, num_episodes, learning_rate):
+        randomize_weights_interval = 5
         for episode in range(num_episodes):
             self._run_episode(learning_rate)
+
+            if randomize_weights_interval and episode % randomize_weights_interval == 0 and episode != 0:
+                self.randomize_weights()
+
 
     def _run_episode(self, learning_rate):
         current_state = self.state
@@ -42,17 +47,25 @@ class ProteinFoldingSimulator:
         print(self.bestscore)
         self.policy_weights = self.update_policy_weights(self.policy_weights, episode_data, learning_rate)
 
+    def randomize_weights(self, scale=0.1):
+        # Randomize the policy weights by adding a small random value and then clipping
+        self.policy_weights = [np.clip(w + np.random.uniform(-scale, scale), -1, 1) for w in self.policy_weights]
+
     @staticmethod
     def update_policy_weights(current_weights, episode_data, learning_rate):
         updated_weights = current_weights.copy()
 
         for state, action, reward, heuristic_influence in episode_data:
             for i in range(len(current_weights)):
-                # Check the sign of reward and the corresponding heuristic influence
+                # Adjust weights based on reward and heuristic influence
                 if reward > 0 and heuristic_influence[i] > 0 or reward < 0 and heuristic_influence[i] < 0:
                     updated_weights[i] += learning_rate 
                 elif reward > 0 and heuristic_influence[i] < 0 or reward < 0 and heuristic_influence[i] > 0:
                     updated_weights[i] -= learning_rate
+                
+                # Clip the updated weight to ensure it stays within -1 and 1
+                updated_weights[i] = np.clip(updated_weights[i], -1, 1)
+
         return updated_weights
 
 
@@ -261,7 +274,7 @@ class Heuristic:
 
 #update policy weight
 sequence = "HHPCHHPCCPCPPHHHHPPHCHPHPHCHPP"
-policy_weights = [-1, 1, -1, 2, 0.5]
+policy_weights = [0, 0, 0, 0, 0]
 
 simulator = ProteinFoldingSimulator(sequence, policy_weights)
 simulator.run(num_episodes=15, learning_rate=0.001)
