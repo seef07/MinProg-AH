@@ -23,7 +23,7 @@ class ProteinFoldingSimulator:
         self.bond_scores_history = [] 
 
     def _initialize_state(self):
-        return [(i, 0, amino_acid) for i, amino_acid in enumerate(self.sequence)]
+        return [(i, 0, 0,  amino_acid) for i, amino_acid in enumerate(self.sequence)]
 
     def run(self, num_episodes, learning_rate):
         print("Start run")
@@ -31,7 +31,6 @@ class ProteinFoldingSimulator:
         global EPISODE
         randomize_weights_interval = 20
         for episode in range(num_episodes):
-            print(episode)
             EPISODE = episode
             iteration = 0
             self._run_episode(learning_rate, episode)
@@ -41,7 +40,7 @@ class ProteinFoldingSimulator:
 
 
     def _run_episode(self, learning_rate, episode):
-        current_state = [(i, 0, amino_acid) for i, amino_acid in enumerate(self.sequence)]
+        current_state = [(i, 0, 0, amino_acid) for i, amino_acid in enumerate(self.sequence)]
         episode_data = []
         for step in range(episode):
             action, heuristic_influence = self.action_selector.select_action(current_state)
@@ -50,6 +49,7 @@ class ProteinFoldingSimulator:
             reward = state_instance.compute_reward(new_state)  # Compute reward
             bondscore = state_instance.reward_function()
             self.bond_scores_history.append(bondscore)
+            print(bondscore)
             self.weights_history.append(self.policy_weights.copy())
             if self.bestscore > bondscore:
                 self.bestscore = bondscore
@@ -75,36 +75,39 @@ class ProteinFoldingSimulator:
         for state, action, reward, heuristic_influence in episode_data:
             for i in range(len(current_weights)):
                 # Adjust weights based on reward and heuristic influence
-                if reward > 0 and heuristic_influence[i] > 0 or reward < 0 and heuristic_influence[i] < 0:
+                if reward > 0 and heuristic_influence > 0 or reward < 0 and heuristic_influence < 0:
                     updated_weights[i] *= (1+learning_rate/2) 
-                elif reward > 0 and heuristic_influence[i] < 0 or reward < 0 and heuristic_influence[i] > 0:
+                elif reward > 0 and heuristic_influence < 0 or reward < 0 and heuristic_influence > 0:
                     updated_weights[i] *= (1-learning_rate/3)
-                elif reward == 0 and heuristic_influence[i] > 0 or reward == 0 and heuristic_influence[i] > 0:
-                    updated_weights[i] *= (1-learning_rate/4)
                 # Clip the updated weight to ensure it stays within -1 and 1
                 updated_weights[i] = np.clip(updated_weights[i], 0.1, 1)
-                updated_weights[4] = 0
         return updated_weights
 
 
     def visualize_protein(self):
         state = self.beststate
+
         # Extract positions and sequence from the state
-        positions = [(x, y) for x, y, _ in state]
-        sequence = [acid for _, _, acid in state]
+        positions = [(x, y, z) for x, y, z, _ in state]
+        sequence = [acid for _, _, _, acid in state]
 
         # Map each amino acid type to a color
         colors = {'H': 'red', 'P': 'blue', 'C': 'green'}
         color_sequence = [colors[acid] for acid in sequence]
 
-        x, y = zip(*positions)
-        plt.figure(figsize=(10, 10))
-        plt.scatter(x, y, color=color_sequence)
+        x, y, z = zip(*positions)
+
+        fig = plt.figure(figsize=(10, 10))
+        ax = fig.add_subplot(111, projection='3d')
+        ax.scatter(x, y, z, c=color_sequence, marker='o')
 
         for i in range(len(positions) - 1):
-            plt.plot([positions[i][0], positions[i + 1][0]], [positions[i][1], positions[i + 1][1]], color='black')
+            ax.plot([positions[i][0], positions[i + 1][0]], 
+                    [positions[i][1], positions[i + 1][1]], 
+                    [positions[i][2], positions[i + 1][2]], 
+                    color='black')
 
-        plt.title(f"Protein Folding Visualization\nEnergy: {self.bestscore}")
+        ax.set_title(f"Protein Folding Visualization\nEnergy: {self.bestscore}")
         plt.show()
 
     
@@ -154,54 +157,83 @@ class ActionSelector:
         score, heuristic_influence = Heuristic.compute_heuristic_score(state, selected_action, policy_weights) 
         return selected_action, heuristic_influence
 
-    def _get_possible_actions(self, state): 
-        list = []
-        for i, part  in enumerate(state):
-            actiontrue = (i, True)
-            actionfalse = (i, False)
-            if self._validate_action(state, actiontrue):
-                list.append(actiontrue)
-            if self._validate_action(state, actionfalse):
-                list.append(actionfalse)
-        return list
+    def _get_possible_actions(self, state):
+        actions = []
+        for i, part in enumerate(state):
+            # Rotation around the x-axis
+            action_x_clockwise = (i, 'x', True)
+            action_x_counter_clockwise = (i, 'x', False)
+            # Rotation around the y-axis
+            action_y_clockwise = (i, 'y', True)
+            action_y_counter_clockwise = (i, 'y', False)
+            # Rotation around the z-axis
+            action_z_clockwise = (i, 'z', True)
+            action_z_counter_clockwise = (i, 'z', False)
+
+            if self._validate_action(state, action_x_clockwise):
+                actions.append(action_x_clockwise)
+            if self._validate_action(state, action_x_counter_clockwise):
+                actions.append(action_x_counter_clockwise)
+            if self._validate_action(state, action_y_clockwise):
+                actions.append(action_y_clockwise)
+            if self._validate_action(state, action_y_counter_clockwise):
+                actions.append(action_y_counter_clockwise)
+            if self._validate_action(state, action_z_clockwise):
+                actions.append(action_z_clockwise)
+            if self._validate_action(state, action_z_counter_clockwise):
+                actions.append(action_z_counter_clockwise)
+
+        return actions
+
+
     
-    def _validate_action(self, state, action, clockwise=True): 
-        state_class = State(state)
+    def _validate_action(self, state, action):
+        stateclass = State(state)
         index = action[0]
-        clockwise = action[1]
-        current_state = [list(sequence) for sequence in state]
-        positions = state_class.positions
+        axis = action[1]
+        clockwise = action[2]
+        
+        current_state = [list(sequence) for sequence in state]  # Convert tuples to lists for mutability
+        positions = [(sequence[0], sequence[1], sequence[2]) for sequence in state]
 
         if index <= 0 or index >= len(positions) - 1:
             return False
 
         pivot = positions[index]
         new_positions = positions.copy()
+
+        dx, dy, dz = 0, 0, 0
+
+        if axis == 'x':
+            dx = 1 if clockwise else -1
+        elif axis == 'y':
+            dy = 1 if clockwise else -1
+        elif axis == 'z':
+            dz = 1 if clockwise else -1
+
         for i in range(index + 1, len(positions)):
-            dx, dy = positions[i][0] - pivot[0], positions[i][1] - pivot[1]
-            if clockwise:
-                new_positions[i] = (pivot[0] - dy, pivot[1] + dx)
-            else:
-                new_positions[i] = (pivot[0] + dy, pivot[1] - dx)
-        if state_class.is_valid_configuration(new_positions):   
+            new_positions[i] = (positions[i][0] - dx, positions[i][1] - dy, positions[i][2] - dz)
+
+        if stateclass.is_valid_configuration(new_positions):   
             for i, position in enumerate(new_positions):
                 current_state[i][0] = position[0]
                 current_state[i][1] = position[1]
+                current_state[i][2] = position[2]
             return True
 
         return False
-
+        
 
 class State:
     def __init__(self, state):
-        self.positions = [(x, y) for x, y, _ in state]
-        self.sequence = [z for _, _, z in state]
+        self.positions = [(x, y,z) for x, y, z,_ in state]
+        self.sequence = [d for _, _,_, d in state]
         self.state = state
         self.energy_matrix = {
                                 'HH': -1, 'CC': -5, 'CH': -1, 'HC':-1, 
                                 'HP': 0, 'PH': 0, 'PP': 0, 'PC': 0, 'CP': 0
                             }
-    def apply_action(self, index, clockwise=True):
+    def apply_action(self, index, axis, clockwise=True):
         current_state = [list(sequence) for sequence in self.state]  # Convert tuples to lists for mutability
         positions = self.positions
 
@@ -211,12 +243,18 @@ class State:
 
         pivot = positions[index]
         new_positions = positions.copy()
+
+        dx, dy, dz = 0, 0, 0
+
+        if axis == 'x':
+            dx = 1 if clockwise else -1
+        elif axis == 'y':
+            dy = 1 if clockwise else -1
+        elif axis == 'z':
+            dz = 1 if clockwise else -1
+
         for i in range(index + 1, len(positions)):
-            dx, dy = positions[i][0] - pivot[0], positions[i][1] - pivot[1]
-            if clockwise:
-                new_positions[i] = (pivot[0] - dy, pivot[1] + dx)
-            else:
-                new_positions[i] = (pivot[0] + dy, pivot[1] - dx)
+            new_positions[i] = (positions[i][0] - dx, positions[i][1] - dy, positions[i][2] - dz)
 
         # Check if the new configuration is valid
         if not self.is_valid_configuration(new_positions):
@@ -226,11 +264,12 @@ class State:
         for i, position in enumerate(new_positions):
             current_state[i][0] = position[0]
             current_state[i][1] = position[1]
+            current_state[i][2] = position[2]
         return current_state
-    
+
     
     def get_positions(self):
-        return [(x, y) for x, y, _ in self.state]
+        return [(x, y, z) for x, y, z, _ in self.state]
     
     @staticmethod
     def is_valid_configuration(positions): 
@@ -239,11 +278,13 @@ class State:
     def reward_function(self):
         energy = 0
         for i in range(len(self.sequence)):
-            for j in range(i + 2, len(self.sequence)):  # Start from i+2 to skip consecutive amino acids
-                if abs(self.positions[i][0] - self.positions[j][0]) + abs(self.positions[i][1] - self.positions[j][1]) == 1:
+            for j in range(i + 2, len(self.sequence)):  
+                distance = abs(self.positions[i][0] - self.positions[j][0]) + abs(self.positions[i][1] - self.positions[j][1]) + abs(self.positions[i][2] - self.positions[j][2])
+                if distance == 1:
                     pair = ''.join(sorted([self.sequence[i], self.sequence[j]]))
                     energy += self.energy_matrix[pair]
         return energy
+
         
 
     def compute_reward(self, new_state):
@@ -251,8 +292,8 @@ class State:
         current_positions, current_sequence = self.positions, self.sequence
 
         # Update state to the new state
-        self.positions = [(x, y) for x, y, _ in new_state]
-        self.sequence = [z for _, _, z in new_state]
+        self.positions = [(x, y, z) for x, y, z,_ in new_state]
+        self.sequence = [z for _, _, _, z in new_state]
 
         # Compute the new reward
         new_reward = self.reward_function()
@@ -277,39 +318,32 @@ class Heuristic:
         sequence = cstate.sequence
 
         # Compute individual heuristic scores
-        altscore = altheuristic(sequence, action[0])
-        ptscore = currentletter(sequence, action[0])
-        compactscore = compactness_heuristic(state, nextstate)
-        patternscore = folding_heuristic(sequence, action[0])
+       # altscore = altheuristic(sequence, action[0])
+       # ptscore = currentletter(sequence, action[0])
+       # compactscore = compactness_heuristic(state, nextstate)
+       # patternscore = folding_heuristic(sequence, action[0])
         rewardscore = cstate.compute_reward(nextstate)
-        distance = distance_heuristic(state, nextstate)
+       #  distance = distance_heuristic(state, nextstate)
 
-        heuristic_scores = [altscore, ptscore, compactscore, patternscore, rewardscore, distance]
-
+        #heuristic_scores = [altscore, ptscore, compactscore, patternscore, rewardscore, distance]
+        heuristic_scores = rewardscore
         # Calculate the total score using policy weights
-        total = sum(weight * score for weight, score in zip(policy_weights, heuristic_scores))
+        #total = sum(weight * score for weight, score in zip(policy_weights, heuristic_scores))
         new_state = State(nextstate)
-        total -= new_state.reward_function()
+        total = -2*new_state.reward_function()
         # Create a vector indicating the sign of each heuristic score
-        sign_vector = [1 if score > 0 else -1 if score < 0 else 0 for score in heuristic_scores]
-
+        #sign_vector = [1 if score > 0 else -1 if score < 0 else 0 for score in heuristic_scores]
+        sign_vector = 1
         return total, sign_vector
 
 
 
-
-##policy_gradient_main_loop
-
-#select_action  ---> Heuristis etcetera
-
-
-
 #update policy weight
-sequence = "PPPPPPHPHHPPPPPHHHPHHHHHPHHPPPPHHPPHHPHHHHHPHHHHHHHHHHPHHPHHHHHHHPPPPPPPPPPPHHHHHHHPPHPHHHPPPPPPHPHH"
-policy_weights = [0.1, 0.1, 0.1, 0.1, 0, 0.1]
-
+sequence = "HPHPPHHPHPPHPHHPPHPH"
+# policy_weights = [0.1, 0.1, 0.1, 0.1, 0, 0.1]
+policy_weights = [ 0.1]
 simulator = ProteinFoldingSimulator(sequence, policy_weights)
-simulator.run(num_episodes=499, learning_rate=0.01)
+simulator.run(num_episodes=55, learning_rate=0.01)
 
 print(simulator.bestscore)
 print(simulator.beststate)
