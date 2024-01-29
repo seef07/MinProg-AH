@@ -1,6 +1,6 @@
 import random
 import math
-from heuristics.heuristics import altheuristic, currentletter, compactness_heuristic, folding_heuristic
+from heuristics.heuristics import altheuristic, currentletter, compactness_heuristic, folding_heuristic, distance_heuristic
 import matplotlib.pyplot as plt
 import numpy as np 
 class ProteinFoldingSimulator:
@@ -16,13 +16,19 @@ class ProteinFoldingSimulator:
         self.scores_per_iteration = []
         self.beststate = None
         self.bestscore = 0
+        self.weights_history = []  # Store weights history
+        self.bond_scores_history = [] 
 
     def _initialize_state(self):
         return [(i, 0, amino_acid) for i, amino_acid in enumerate(self.sequence)]
 
     def run(self, num_episodes, learning_rate):
-        randomize_weights_interval = 5
+        print("Start run")
+        global iteration
+       
+        randomize_weights_interval = 3
         for episode in range(num_episodes):
+            iteration = 0
             self._run_episode(learning_rate)
 
             if randomize_weights_interval and episode % randomize_weights_interval == 0 and episode != 0:
@@ -30,26 +36,33 @@ class ProteinFoldingSimulator:
 
 
     def _run_episode(self, learning_rate):
-        current_state = self.state
+        current_state = [(i, 0, amino_acid) for i, amino_acid in enumerate(self.sequence)]
         episode_data = []
-        for step in range(2000):
+        for step in range(3333):
             action, heuristic_influence = self.action_selector.select_action(current_state)
             state_instance = State(current_state)
             new_state = state_instance.apply_action(action[0], action[1])  # Apply action
             reward = state_instance.compute_reward(new_state)  # Compute reward
             bondscore = state_instance.reward_function()
+            print(bondscore)
+            self.bond_scores_history.append(bondscore)
+            self.weights_history.append(self.policy_weights.copy())
             if self.bestscore > bondscore:
                 self.bestscore = bondscore
                 self.beststate = new_state
             
             episode_data.append((current_state, action, reward, heuristic_influence))
             current_state = new_state
+        print("###############################")
         print(self.bestscore)
+        print(self.policy_weights)
+        print(self.beststate)
+        print("###############################")
         self.policy_weights = self.update_policy_weights(self.policy_weights, episode_data, learning_rate)
 
-    def randomize_weights(self, scale=0.1):
-        # Randomize the policy weights by adding a small random value and then clipping
-        self.policy_weights = [np.clip(w + np.random.uniform(-scale, scale), -1, 1) for w in self.policy_weights]
+    def randomize_weights(self):
+        # Randomize the policy weights by adding a random value between -5 and 5
+        self.policy_weights = [w + np.random.uniform(0, 5) for w in self.policy_weights]
 
     @staticmethod
     def update_policy_weights(current_weights, episode_data, learning_rate):
@@ -62,9 +75,11 @@ class ProteinFoldingSimulator:
                     updated_weights[i] += learning_rate 
                 elif reward > 0 and heuristic_influence[i] < 0 or reward < 0 and heuristic_influence[i] > 0:
                     updated_weights[i] -= learning_rate
+               # elif reward == 0 and heuristic_influence[i] > 0 or reward == 0 and heuristic_influence[i] > 0:
+                #    updated_weights[i] -= learning_rate
                 
                 # Clip the updated weight to ensure it stays within -1 and 1
-                updated_weights[i] = np.clip(updated_weights[i], -1, 1)
+                updated_weights[i] = np.clip(updated_weights[i], 0, 5)
 
         return updated_weights
 
@@ -89,15 +104,29 @@ class ProteinFoldingSimulator:
         plt.title(f"Protein Folding Visualization\nEnergy: {self.bestscore}")
         plt.show()
 
+    
+    def plot_weights_and_bond_scores(self):
+        # Plotting weights
+        weights_array = np.array(self.weights_history)
+        plt.figure(figsize=(12, 6))
+        for i in range(weights_array.shape[1]):
+            plt.plot(weights_array[:, i], label=f'Weight {i+1}')
+        plt.plot(self.bond_scores_history, label='Bond Score')
+        plt.title('Policy Weights Over Iterations')
+        plt.xlabel('Iteration')
+        plt.ylabel('Weight Value')
+        plt.legend()
+        plt.show()
+
 iteration = 0
 class ActionSelector:
     def __init__(self, policy_weights):
         self.policy_weights = policy_weights
 
-    def select_action(self, state, start_temp=1.0, end_temp=0.01):
+    def select_action(self, state, start_temp=0.5, end_temp=0.01):
         global iteration
         iteration += 1
-        temp = start_temp - iteration * (start_temp - end_temp) / 2000
+        temp = start_temp - iteration * (start_temp - end_temp) / 3333
         possible_actions = self._get_possible_actions(state)
         action_scores = []
 
@@ -113,12 +142,9 @@ class ActionSelector:
         new_state = state_instance.apply_action(selected_action[0], selected_action[1])
         new_state_instance = State(new_state)
         new_energy = new_state_instance.reward_function()
-        current_energy = state_instance.reward_function()     
-        exp_argument = (new_energy - current_energy) / temp
 
-        capped_argument = min(exp_argument, 1) 
 
-        if random.random() < math.exp(capped_argument):
+        if random.random() < temp:
             selected_action = random.choice(possible_actions)
 
         score, heuristic_influence = Heuristic.compute_heuristic_score(state, selected_action, policy_weights) 
@@ -252,12 +278,14 @@ class Heuristic:
         compactscore = compactness_heuristic(state, nextstate)
         patternscore = folding_heuristic(sequence, action[0])
         rewardscore = cstate.compute_reward(nextstate)
+        distance = distance_heuristic(state, nextstate)
 
-        heuristic_scores = [altscore, ptscore, compactscore, patternscore, rewardscore]
+        heuristic_scores = [altscore, ptscore, compactscore, patternscore, rewardscore, distance]
 
         # Calculate the total score using policy weights
         total = sum(weight * score for weight, score in zip(policy_weights, heuristic_scores))
-
+        new_state = State(nextstate)
+        total -= new_state.reward_function()
         # Create a vector indicating the sign of each heuristic score
         sign_vector = [1 if score > 0 else -1 if score < 0 else 0 for score in heuristic_scores]
 
@@ -273,12 +301,13 @@ class Heuristic:
 
 
 #update policy weight
-sequence = "HHPCHHPCCPCPPHHHHPPHCHPHPHCHPP"
-policy_weights = [0, 0, 0, 0, 0]
+sequence = "PPPHHPPHHPPPPPHHHHHHHPPHHPPPPHHPPHPP"
+policy_weights = [0, 0, 0, 0, 0, 0]
 
 simulator = ProteinFoldingSimulator(sequence, policy_weights)
-simulator.run(num_episodes=15, learning_rate=0.001)
+simulator.run(num_episodes=10, learning_rate=0.01)
 
 print(simulator.bestscore)
 print(simulator.beststate)
 simulator.visualize_protein()
+simulator.plot_weights_and_bond_scores()

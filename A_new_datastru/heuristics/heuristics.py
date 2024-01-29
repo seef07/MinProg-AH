@@ -36,12 +36,12 @@ def currentletter(protein_sequence, fold_index):
         return 0
 
     # Extract the amino acid at the fold point
-    p = protein_sequence[fold_index]
-
-    # Return 1 if the amino acid is 'P', else return 0
-    return 1 if p == 'P' else 0
-
-
+    if protein_sequence[fold_index] == 'P':
+        return 4
+    elif protein_sequence[fold_index] == 'H':
+        return 1
+    else:
+        return 0
 ##############Energy heuristic#####################################
 
 
@@ -69,19 +69,19 @@ def score_pattern(pattern):
     Score the given pattern based on predefined rules.
     """
     if pattern in ['HH', 'HHHH']:
-        return 2
+        return 4
     elif pattern in ['PP', 'PPPP']:
-        return 1
+        return 3
     elif pattern in ['HP', 'PH', 'HPHP', 'PHHP']:
-        return 0
+        return 1
     elif pattern in ['HHPP', 'PPHH']:
-        return -1
-    elif pattern in ['HHHH', 'PPPP']:
         return -2
+    elif pattern in ['HHHH', 'PPPP']:
+        return -3.5
     elif pattern in ['HPHH', 'HHPH']:
-        return 1.5
+        return 2
     elif pattern == 'HPHP':
-        return -1.5
+        return 3
     else:
         return 0
 
@@ -101,3 +101,33 @@ def folding_heuristic(protein_sequence, fold_index):
 
     return score
 ###########################################################
+
+def distance_heuristic(state, new_state):
+    """
+    Calculates the Euclidean distance between the first and last coordinates in the state.
+    This heuristic can be used to assess the compactness or extension of the protein structure.
+    
+    :param state: The current state of the protein, represented as a list of tuples (x, y, amino_acid).
+    :return: The Euclidean distance between the first and last coordinates.
+    """
+
+    if not state or not new_state:
+        return 0
+
+    # Extract the first and last coordinates from the state
+    first_coordinate = state[0][:2]  # (x, y) of the first element
+    last_coordinate = state[-1][:2]  # (x, y) of the last element
+
+    # Calculate the Euclidean distance
+    distance = ((last_coordinate[0] - first_coordinate[0])**2 + (last_coordinate[1] - first_coordinate[1])**2)**0.5
+
+
+        # Extract the first and last coordinates from the state
+    f_coordinate = new_state[0][:2]  # (x, y) of the first element
+    l_coordinate = new_state[-1][:2]  # (x, y) of the last element
+
+    # Calculate the Euclidean distance
+    distance_new = ((l_coordinate[0] - f_coordinate[0])**2 + (l_coordinate[1] - f_coordinate[1])**2)**0.5
+
+    score = distance - distance_new
+    return score

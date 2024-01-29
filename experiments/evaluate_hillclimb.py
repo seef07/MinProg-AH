@@ -6,7 +6,7 @@ from protein_folding.algorithms.hillclimbs.hillclimb import HillClimb
 def main():
     create_experiment_folders()
 
-    sequence = sequence1
+    sequence = HHPCHHPCCPCPPHHHHPPHCHPHPHCHPP
     protein = Protein(sequence)
     print(f"{protein.get_order}")
 

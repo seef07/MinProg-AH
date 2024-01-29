@@ -5,7 +5,7 @@ import matplotlib.colors as mcolors
 
 
 # Protein sequence
-sequence = "HHPCHHPCCPCPPHHHHPPHCHPHPHCHPP"  # Change this to your protein sequence
+sequence = "PPPHHPPHHPPPPPHHHHHHHPPHHPPPPHHPPHPP"  # Change this to your protein sequence
 
 # Energy matrix
 energy_matrix = {
@@ -47,7 +47,7 @@ def rotate_segment(positions, index, clockwise=True):
     return positions
 
 
-def monte_carlo_folding(sequence, iterations=10000, start_temp=1.0, end_temp=0.01):
+def monte_carlo_folding(sequence, iterations=15000, start_temp=1.0, end_temp=0.01):
     current_positions = [(i, 0) for i in range(len(sequence))]
     current_energy = calculate_energy(current_positions, sequence)
     best_positions, best_energy = current_positions, current_energy
