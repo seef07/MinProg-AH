@@ -5,7 +5,7 @@ import time
 
 def main():
 	create_experiment_folders()
-	sequence = 'HHPCHHPCCPCPPHHHHPPHCHPHPHCHPP'
+	sequence = 'PPCHHPPCHPPPPCHHHHCHHPPHHPPPPHHPPHPP'
 	protein = Protein(sequence)
 	start_time = time.time()
 	algorithm = SimulatedAnnealing(protein, dimensions=2, debug=True)

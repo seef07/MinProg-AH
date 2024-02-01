@@ -3,9 +3,10 @@ import math
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 
-from heuristics.heuristics import altheuristic, currentletter, compactness_heuristic, folding_heuristic
+from heuristics.heuristics import altheuristic, currentletter, compactness_heuristic, folding_heuristic,  hydrophobic_compactness_heuristic
+import numpy as np
 
-sequence = "HCPHPHPHCHHHHPCCPPHPPPHPPPPCPPPHPPPHPHHHHCHPHPHPHH"
+sequence = "HPHPPHHPHPPHPHHPPHPH"
 
 energy_matrix = {
     'HH': -1, 'CC': -5, 'CH': -1, 'HC':-1, 
@@ -13,12 +14,14 @@ energy_matrix = {
 }
 
 
-policy_weights = [0 , 0, 0, 0.5, 0]
+policy_weights = [0, 0, 0, 0, 0, 0]
 
-
+weights_history = []
+bond_scores_history = []
 
 data = [(i, 0, amino_acid) for i, amino_acid in enumerate(sequence)]
-
+best_weight = []
+ 
 
 def reward_function(positions, sequence): ##check
     energy = 0
@@ -47,7 +50,7 @@ def compute_reward(new_state, current_state): ##check
     
     delta = -(reward1 - reward0)
     return delta
-
+EPISODE = 1000
 scores_per_iteration = []
 def policy_gradient_main_loop(protein_sequence, num_episodes, learning_rate, policy_weights):
     global scores_per_iteration 
@@ -58,15 +61,19 @@ def policy_gradient_main_loop(protein_sequence, num_episodes, learning_rate, pol
         current_state = protein_sequence
         episode_data = []
         print("start")
-        for step in range(10000):
+        for step in range(EPISODE):
             i += 1
+            
             action = select_action(current_state, policy_weights)  # Use heuristic
             new_state = apply_action(current_state, action[0], action[1])  # Apply action
             reward = compute_reward(new_state, current_state)  # Compute reward
             bondscore = reward_function(extract_positions(new_state), sequence)
+            bond_scores_history.append(bondscore)
+            weights_history.append(policy_weights.copy())
             if bestscore > bondscore:
                 bestscore = bondscore
                 beststate = new_state
+                best_weight = policy_weights.copy()
             episode_data.append((current_state, action, reward))
             scores_per_iteration.append((i, bondscore))
             current_state = new_state
@@ -85,7 +92,7 @@ iteration = 0
 def select_action(state, policy_weights, start_temp=1.0, end_temp=0.01):
     global iteration
     iteration += 1
-    temp = start_temp - iteration * (start_temp - end_temp) / 1000
+    temp = start_temp - iteration * (start_temp - end_temp) / EPISODE
     possible_actions = get_possible_actions(state) #check
     action_scores = []
 
@@ -199,11 +206,12 @@ def compute_heuristic_score(state, action, policy_weights):
     ptscore = currentletter(sequence, action[0])
     compactscore = compactness_heuristic(state, nextstate)
     patternscore = folding_heuristic(sequence, action[0])
-    rewardscore = compute_reward(nextstate, state)
+    rewardscore = reward_function(extract_positions(state), sequence)
+    hydrop = hydrophobic_compactness_heuristic(state, nextstate)
 
     # Debugging: Print the heuristic scores
 
-    heuristic_scores = [altscore, ptscore, compactscore, patternscore, rewardscore]
+    heuristic_scores = [altscore, ptscore, compactscore, patternscore, rewardscore, hydrop]
 
     total = sum(weight * score for weight, score in zip(policy_weights, heuristic_scores))
 
@@ -225,6 +233,8 @@ def estimate_heuristic_influence(i, state, action):
         return folding_heuristic(sequence, action[0])
     if i == 4:
         return compute_reward(nextstate, state)
+    if i == 5:
+        return hydrophobic_compactness_heuristic(state, nextstate)
     
 import matplotlib.pyplot as plt
 
@@ -247,21 +257,38 @@ def visualize_protein(state):
     plt.title(f"Protein Folding Visualization\nEnergy: {reward_function(positions, sequence)}")
     plt.show()
 
+def plot_weights_and_bond_scores():
+    # Plotting weights
+    weights_array = 10*np.array(weights_history)
+    plt.figure(figsize=(12, 6))
+    for i in range(weights_array.shape[1]):
+        plt.plot(weights_array[:, i], label=f'Weight {i+1}')
+    plt.plot(bond_scores_history, label='Bond Score')
+    plt.title('Policy Weights Over Iterations')
+    plt.xlabel('Iteration')
+    plt.ylabel('Weight Value')
+    plt.legend()
+    plt.show()
+    
+
 # Example usage
-state =  [[0, 0, 'H'], [1, 0, 'C'], [2, 0, 'P'], [3, 0, 'H'], [4, 0, 'P'], [4, 1, 'H'], [3, 1, 'P'], [2, 1, 'H'], [1, 1, 'C'], [1, 2, 'H'], [1, 3, 'H'], [0, 3, 'H'], [0, 2, 'H'], [0, 1, 'C'], [-1, 1, 'P'], [-1, 2, 'H'], [-1, 3, 'P'], [-1, 4, 'H'], [-1, 5, 'P'], [-1, 6, 'H'], [-1, 7, 'C'], [-1, 8, 'H'], [-2, 8, 'H']]
-visualize_protein(state)
+#state =  [[0, 0, 'H'], [1, 0, 'C'], [2, 0, 'P'], [3, 0, 'H'], [4, 0, 'P'], [4, 1, 'H'], [3, 1, 'P'], [2, 1, 'H'], [1, 1, 'C'], [1, 2, 'H'], [1, 3, 'H'], [0, 3, 'H'], [0, 2, 'H'], [0, 1, 'C'], [-1, 1, 'P'], [-1, 2, 'H'], [-1, 3, 'P'], [-1, 4, 'H'], [-1, 5, 'P'], [-1, 6, 'H'], [-1, 7, 'C'], [-1, 8, 'H'], [-2, 8, 'H']]
+#visualize_protein(state)
 
 
 
-print(policy_gradient_main_loop(protein_sequence = data, num_episodes=150, learning_rate= 0.001, policy_weights= policy_weights))
+print(policy_gradient_main_loop(protein_sequence = data, num_episodes=25, learning_rate= 0.001, policy_weights= policy_weights))
 
 steps, bondscores = zip(*scores_per_iteration)
+plot_weights_and_bond_scores()
+EPISODE = 25000
+print(policy_gradient_main_loop(protein_sequence = data, num_episodes=1, learning_rate= 0.001, policy_weights= best_weight))
 
 # Create a plot
-plt.figure(figsize=(10, 6))
-plt.plot(steps, bondscores, marker='o')  # 'o' creates circular markers on each data point
-plt.title('Bond Scores Per Iteration')
-plt.xlabel('Iteration Step')
-plt.ylabel('Bond Score')
-plt.grid(True)
-plt.show()
+#plt.figure(figsize=(10, 6))
+#plt.plot(steps, bondscores, marker='o')  # 'o' creates circular markers on each data point
+#plt.title('Bond Scores Per Iteration')
+#plt.xlabel('Iteration Step')
+#plt.ylabel('Bond Score')
+#plt.grid(True)
+#plt.show()

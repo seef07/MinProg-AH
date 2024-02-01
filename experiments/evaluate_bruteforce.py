@@ -10,8 +10,8 @@ def run():
     # Create necessary folders
     create_bruteforce_folders()
 
-    seq = "PPPHHPPHHPPPPPHHHHHHHPPHHPPPPHHPPHPP"
-    max_iterations = 5000000
+    seq = "HHPHPHPHPHHHHPHPPPHPPPHPPPPHPPPHPPPHPHHHHPHPHPHPHH"
+    max_iterations = 15000000
     dim = 2
     protein = Protein(seq)
     algorithm = BruteForce(protein, dimensions=dim, max_iterations=max_iterations, verbose=True)

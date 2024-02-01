@@ -5,7 +5,7 @@ import matplotlib.colors as mcolors
 
 
 # Protein sequence
-sequence = "PPPPPPHPHHPPPPPHHHPHHHHHPHHPPPPHHPPHHPHHHHHPHHHHHHHHHHPHHPHHHHHHHPPPPPPPPPPPHHHHHHHPPHPHHHPPPPPPHPHH"  # Change this to your protein sequence
+sequence = "HPHPPHHPHPPHPHHPPHPH"  # Change this to your protein sequence
 
 # Energy matrix
 energy_matrix = {
@@ -13,17 +13,23 @@ energy_matrix = {
     'HP': 0, 'PH': 0, 'PP': 0, 'PC': 0, 'CP': 0
 }
 
+weights_history = []
+bond_scores_history = []
+
 # Initialize positions in a straight line
 positions = [(i, 0) for i in range(len(sequence))]
 
 def calculate_energy(positions, sequence):
     energy = 0
     for i in range(len(sequence)):
-        for j in range(i + 2, len(sequence)):  # Start from i+2 to skip consecutive amino acids
-            if abs(positions[i][0] - positions[j][0]) + abs(positions[i][1] - positions[j][1]) == 1:
+        for j in range(i + 2, len(sequence)):  # Skip adjacent amino acids
+            # Check for lateral adjacency (horizontal or vertical)
+            if (positions[i][0] == positions[j][0] and abs(positions[i][1] - positions[j][1]) == 1) or \
+               (positions[i][1] == positions[j][1] and abs(positions[i][0] - positions[j][0]) == 1):
                 pair = ''.join(sorted([sequence[i], sequence[j]]))
                 energy += energy_matrix[pair]
     return energy
+
 
 
 def is_valid_configuration(positions):
@@ -47,7 +53,7 @@ def rotate_segment(positions, index, clockwise=True):
     return positions
 
 
-def monte_carlo_folding(sequence, iterations=15000, start_temp=1.0, end_temp=0.01):
+def monte_carlo_folding(sequence, iterations=70000, start_temp=0.8, end_temp=0.01):
     current_positions = [(i, 0) for i in range(len(sequence))]
     current_energy = calculate_energy(current_positions, sequence)
     best_positions, best_energy = current_positions, current_energy
@@ -57,6 +63,8 @@ def monte_carlo_folding(sequence, iterations=15000, start_temp=1.0, end_temp=0.0
         index = random.randint(1, len(sequence) - 2)
         new_positions = rotate_segment(current_positions, index, random.choice([True, False]))
         new_energy = calculate_energy(new_positions, sequence)
+        bond_scores_history.append(new_energy)
+
         visualize_in_cmd(best_positions, sequence)
         if new_energy < current_energy:
             current_positions, current_energy = new_positions, new_energy
@@ -112,6 +120,16 @@ def visualize_in_cmd(positions, sequence):
     for row in grid:
         print(''.join(row))
 
+def plot_weights_and_bond_scores():
+    # Plotting weights
+    plt.figure(figsize=(12, 6))
+    plt.plot(bond_scores_history, label='Bond Score')
+    plt.title('Policy Weights Over Iterations')
+    plt.xlabel('Iteration')
+    plt.ylabel('Weight Value')
+    plt.legend()
+    plt.show()
+    
 
 
 # Run the simulation
@@ -121,3 +139,4 @@ print("Best energy:", best_energy)
 visualize_in_cmd(best_positions, sequence)
 
 visualize_protein(best_positions, sequence)
+plot_weights_and_bond_scores()

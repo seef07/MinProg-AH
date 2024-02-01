@@ -3,7 +3,7 @@ from copy import deepcopy
 from . import Algorithm
 from .heuristics import *
 from protein_folding.fast_protein import fast_compute_bond_score
-
+import matplotlib.pyplot as plt
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from protein_folding.protein import Protein
@@ -27,7 +27,7 @@ class IterativeGreedy(Algorithm):
         self._iteration = 0
         self.max_iterations = max_iterations
         self.lowest_callback = len(protein)
-
+        self.bond_scores_history = []
         self.best_score: int = 1
         self.best_order: list[int] = []
 
@@ -47,7 +47,7 @@ class IterativeGreedy(Algorithm):
         if depth >= len(self.protein):
 
             bond_score = fast_compute_bond_score(self.protein.sequence, self.protein.order[1:])
-            print(bond_score)
+            self.bond_scores_history.append(bond_score)
             if bond_score < self.best_score:
                 self.best_score = bond_score
                 self.best_order = self.protein.order
@@ -58,12 +58,13 @@ class IterativeGreedy(Algorithm):
             return
 
         self._iteration += 1
-
+        print(self._iteration)
+        print(self.best_score)
         if self._iteration > self.max_iterations:
             return
 
         free_directions = self.protein.nodes[depth].get_free_directions(self.directions)
-        print(free_directions)
+
         if not free_directions:
             return
 
@@ -75,10 +76,9 @@ class IterativeGreedy(Algorithm):
             #     # Return early to prevent searching for worst scored branch
             #     self._iteration -= 1
             #     return
-
             self.protein.preserve()
             self.protein.nodes[depth].change_direction(direction)
-            print(self.best_order)
+
             self._next_fold(depth + 1)
             self.protein.revert()
 
@@ -99,3 +99,13 @@ class IterativeGreedy(Algorithm):
 
         self.protein.set_order(self.best_order[1:])
         return self.best_score
+    
+    def plot_bond_scores(self):
+        # Plotting weights
+        plt.figure(figsize=(12, 6))
+        plt.plot(self.bond_scores_history, label='Bond Score')
+        plt.title(' bond Over Iterations')
+        plt.xlabel('Iteration')
+        plt.ylabel('Bond Energy')
+        plt.legend()
+        plt.show()

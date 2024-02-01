@@ -159,44 +159,18 @@ class ActionSelector:
 
     def _get_possible_actions(self, state):
         actions = []
-        for i, part in enumerate(state):
-            # Rotation around the x-axis
-            action_x_clockwise = (i, 'x', True)
-            action_x_counter_clockwise = (i, 'x', False)
-            # Rotation around the y-axis
-            action_y_clockwise = (i, 'y', True)
-            action_y_counter_clockwise = (i, 'y', False)
-            # Rotation around the z-axis
-            action_z_clockwise = (i, 'z', True)
-            action_z_counter_clockwise = (i, 'z', False)
-
-            if self._validate_action(state, action_x_clockwise):
-                actions.append(action_x_clockwise)
-            if self._validate_action(state, action_x_counter_clockwise):
-                actions.append(action_x_counter_clockwise)
-            if self._validate_action(state, action_y_clockwise):
-                actions.append(action_y_clockwise)
-            if self._validate_action(state, action_y_counter_clockwise):
-                actions.append(action_y_counter_clockwise)
-            if self._validate_action(state, action_z_clockwise):
-                actions.append(action_z_clockwise)
-            if self._validate_action(state, action_z_counter_clockwise):
-                actions.append(action_z_counter_clockwise)
-
+        for i in range(len(state)):
+            for rotation in ['clockwise_xy', 'counterclockwise_xy', 'clockwise_xz', 'counterclockwise_xz', 'clockwise_yz', 'counterclockwise_yz']:
+                if self._validate_action(state, i, rotation):
+                    actions.append((i, rotation))
         return actions
 
 
-    
-    def _validate_action(self, state, action):
-        stateclass = State(state)
-        index = action[0]
-        axis = action[1]
-        clockwise = action[2]
-        
-        current_state = [list(sequence) for sequence in state]  # Convert tuples to lists for mutability
-        positions = [(sequence[0], sequence[1], sequence[2]) for sequence in state]
+    def _validate_action(self, state, index, rotation):
+        cstate = State(state)
+        positions =  [(sequence[0], sequence[1], sequence[2]) for sequence in state]
 
-        if index <= 0 or index >= len(positions) - 1:
+        if index < 0 or index >= len(positions) - 1:
             return False
 
         pivot = positions[index]
@@ -204,26 +178,43 @@ class ActionSelector:
 
         dx, dy, dz = 0, 0, 0
 
-        if axis == 'x':
-            dx = 1 if clockwise else -1
-        elif axis == 'y':
-            dy = 1 if clockwise else -1
-        elif axis == 'z':
-            dz = 1 if clockwise else -1
+        if rotation == 'clockwise_xy':
+            # Clockwise rotation in the XY plane (horizontal plane)
+            # Adjust the coordinates accordingly for a 3D rotation
+            dx = pivot[1] - positions[index + 1][1]
+            dy = positions[index + 1][0] - pivot[0]
+        elif rotation == 'counterclockwise_xy':
+            # Counterclockwise rotation in the XY plane (horizontal plane)
+            # Adjust the coordinates accordingly for a 3D rotation
+            dx = positions[index + 1][1] - pivot[1]
+            dy = pivot[0] - positions[index + 1][0]
+        elif rotation == 'clockwise_xz':
+            # Clockwise rotation in the XZ plane (vertical plane, front view)
+            # Adjust the coordinates accordingly for a 3D rotation
+            dx = pivot[2] - positions[index + 1][2]
+            dz = positions[index + 1][0] - pivot[0]
+        elif rotation == 'counterclockwise_xz':
+            # Counterclockwise rotation in the XZ plane (vertical plane, front view)
+            # Adjust the coordinates accordingly for a 3D rotation
+            dx = positions[index + 1][2] - pivot[2]
+            dz = pivot[0] - positions[index + 1][0]
+        elif rotation == 'clockwise_yz':
+            # Clockwise rotation in the YZ plane (vertical plane, side view)
+            # Adjust the coordinates accordingly for a 3D rotation
+            dy = pivot[2] - positions[index + 1][2]
+            dz = positions[index + 1][1] - pivot[1]
+        elif rotation == 'counterclockwise_yz':
+            # Counterclockwise rotation in the YZ plane (vertical plane, side view)
+            # Adjust the coordinates accordingly for a 3D rotation
+            dy = positions[index + 1][2] - pivot[2]
+            dz = pivot[1] - positions[index + 1][1]
+        else:
+            return False  # Invalid rotation
 
-        for i in range(index + 1, len(positions)):
-            new_positions[i] = (positions[i][0] - dx, positions[i][1] - dy, positions[i][2] - dz)
+        new_positions[index + 1] = (positions[index + 1][0] + dx, positions[index + 1][1] + dy, positions[index + 1][2] + dz)
 
-        if stateclass.is_valid_configuration(new_positions):   
-            for i, position in enumerate(new_positions):
-                current_state[i][0] = position[0]
-                current_state[i][1] = position[1]
-                current_state[i][2] = position[2]
-            return True
-
-        return False
-        
-
+        return cstate.is_valid_configuration(new_positions)
+    
 class State:
     def __init__(self, state):
         self.positions = [(x, y,z) for x, y, z,_ in state]
@@ -233,7 +224,7 @@ class State:
                                 'HH': -1, 'CC': -5, 'CH': -1, 'HC':-1, 
                                 'HP': 0, 'PH': 0, 'PP': 0, 'PC': 0, 'CP': 0
                             }
-    def apply_action(self, index, axis, clockwise=True):
+    def apply_action(self, index, direction):
         current_state = [list(sequence) for sequence in self.state]  # Convert tuples to lists for mutability
         positions = self.positions
 
@@ -246,25 +237,38 @@ class State:
 
         dx, dy, dz = 0, 0, 0
 
-        if axis == 'x':
-            dx = 1 if clockwise else -1
-        elif axis == 'y':
-            dy = 1 if clockwise else -1
-        elif axis == 'z':
-            dz = 1 if clockwise else -1
+        if direction == 'up':
+            dy = 1
+        elif direction == 'down':
+            dy = -1
+        elif direction == 'left':
+            dx = -1
+        elif direction == 'right':
+            dx = 1
+        elif direction == 'front':
+            dz = 1
+        elif direction == 'behind':
+            dz = -1
 
-        for i in range(index + 1, len(positions)):
-            new_positions[i] = (positions[i][0] - dx, positions[i][1] - dy, positions[i][2] - dz)
+        # Calculate the new position based on the previous one
+        new_x = pivot[0] + dx
+        new_y = pivot[1] + dy
+        new_z = pivot[2] + dz
 
-        # Check if the new configuration is valid
-        if not self.is_valid_configuration(new_positions):
-            return current_state
+        # Check if the new position is within one unit distance of the previous one
+        if abs(new_x - positions[index + 1][0]) <= 1 and abs(new_y - positions[index + 1][1]) <= 1 and abs(new_z - positions[index + 1][2]) <= 1:
+            new_positions[index + 1] = (new_x, new_y, new_z)
 
-        # Update the state with new positions
-        for i, position in enumerate(new_positions):
-            current_state[i][0] = position[0]
-            current_state[i][1] = position[1]
-            current_state[i][2] = position[2]
+            # Check if the new configuration is valid
+            if not self.is_valid_configuration(new_positions):
+                return current_state
+
+            # Update the state with new positions
+            for i, position in enumerate(new_positions):
+                current_state[i][0] = position[0]
+                current_state[i][1] = position[1]
+                current_state[i][2] = position[2]
+
         return current_state
 
     

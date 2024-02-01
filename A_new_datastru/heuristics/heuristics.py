@@ -128,6 +128,124 @@ def distance_heuristic(state, new_state):
 
     # Calculate the Euclidean distance
     distance_new = ((l_coordinate[0] - f_coordinate[0])**2 + (l_coordinate[1] - f_coordinate[1])**2)**0.5
-
     score = distance - distance_new
+    return 10*score
+
+
+#####compactness######################
+def calculate_hydrophobic_compactness(state):
+    """
+    Calculate the compactness of hydrophobic residues in the protein structure.
+    Compactness is measured as the inverse of the average distance of 'H' residues from their centroid.
+    """
+    # Extract hydrophobic residues
+    h_residues = [coord for coord in state if coord[2] == 'H']
+
+    if not h_residues:
+        return 0  # Avoid division by zero if there are no hydrophobic residues
+
+    # Calculate centroid of hydrophobic residues
+    centroid_x = sum(coord[0] for coord in h_residues) / len(h_residues)
+    centroid_y = sum(coord[1] for coord in h_residues) / len(h_residues)
+
+    # Calculate average distance from centroid
+    avg_distance = sum(((coord[0] - centroid_x)**2 + (coord[1] - centroid_y)**2)**0.5 for coord in h_residues) / len(h_residues)
+
+    # Compactness is the inverse of average distance
+    compactness = 1 / avg_distance if avg_distance != 0 else 0
+    return 10*(compactness)
+
+def hydrophobic_compactness_heuristic(current_state, new_state):
+    """
+    Calculate the difference in compactness of hydrophobic residues between the current and new states.
+    """
+    current_compactness = calculate_hydrophobic_compactness(current_state)
+    new_compactness = calculate_hydrophobic_compactness(new_state)
+    return 10*(new_compactness - current_compactness)
+
+#################
+def calculate_cytosine_compactness(state):
+    """
+    Calculate the compactness of cytosine ('C') residues in the protein structure.
+    Compactness is measured as the inverse of the average distance of 'C' residues from their centroid.
+    """
+    # Extract cytosine residues
+    c_residues = [coord for coord in state if coord[2] == 'C']
+
+    if not c_residues:
+        return 0  # Avoid division by zero if there are no cytosine residues
+
+    # Calculate centroid of cytosine residues
+    centroid_x = sum(coord[0] for coord in c_residues) / len(c_residues)
+    centroid_y = sum(coord[1] for coord in c_residues) / len(c_residues)
+
+    # Calculate average distance from centroid
+    avg_distance = sum(((coord[0] - centroid_x)**2 + (coord[1] - centroid_y)**2)**0.5 for coord in c_residues) / len(c_residues)
+
+    # Compactness is the inverse of average distance
+    compactness = 1 / avg_distance if avg_distance != 0 else 0
+    return  10* compactness
+#############################
+def cytosine_compactness_heuristic(current_state, new_state):
+    """
+    Calculate the difference in compactness of cytosine ('C') residues between the current and new states.
+    """
+    current_compactness = calculate_cytosine_compactness(current_state)
+    new_compactness = calculate_cytosine_compactness(new_state)
+    return 10 * (new_compactness - current_compactness)
+
+#######
+
+def compactness_heuristic_H(current_state, new_state):
+    """
+    Calculate a score representing the change in compactness of hydrophobic (H) amino acids
+    between the current state and the new state of a protein structure.
+    :param current_state: List of tuples representing the current state (x, y, amino_acid).
+    :param new_state: List of tuples representing the new state (x, y, amino_acid).
+    :return: A single score representing the change in compactness of hydrophobic amino acids.
+    """
+
+    def average_distance(state):
+        hydrophobic_positions = [node[:2] for node in state if node[2] == 'H']
+        if len(hydrophobic_positions) < 2:
+            return 0
+        
+        avg_dist = sum(((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2)**0.5 
+                       for i, pos1 in enumerate(hydrophobic_positions) 
+                       for pos2 in hydrophobic_positions[i+1:]) / len(hydrophobic_positions)
+        return avg_dist
+
+    current_avg_dist = average_distance(current_state)
+    new_avg_dist = average_distance(new_state)
+
+    # The score is the difference in average distances
+    # A positive score indicates increased compactness in the new state
+    score = current_avg_dist - new_avg_dist
+    return score
+
+def compactness_heuristic_C(current_state, new_state):
+    """
+    Calculate a score representing the change in compactness of hydrophobic (H) amino acids
+    between the current state and the new state of a protein structure.
+    :param current_state: List of tuples representing the current state (x, y, amino_acid).
+    :param new_state: List of tuples representing the new state (x, y, amino_acid).
+    :return: A single score representing the change in compactness of hydrophobic amino acids.
+    """
+
+    def average_distance(state):
+        hydrophobic_positions = [node[:2] for node in state if node[2] == 'C']
+        if len(hydrophobic_positions) < 2:
+            return 0
+        
+        avg_dist = sum(((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2)**0.5 
+                       for i, pos1 in enumerate(hydrophobic_positions) 
+                       for pos2 in hydrophobic_positions[i+1:]) / len(hydrophobic_positions)
+        return avg_dist
+
+    current_avg_dist = average_distance(current_state)
+    new_avg_dist = average_distance(new_state)
+
+    # The score is the difference in average distances
+    # A positive score indicates increased compactness in the new state
+    score = current_avg_dist - new_avg_dist
     return score

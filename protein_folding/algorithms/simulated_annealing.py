@@ -23,7 +23,7 @@ class SimulatedAnnealing(Algorithm):
         self.decrease = .9997
         # number of random mutations to allow
         # TODO: decide how to determine when to stop algorithm
-        self.n_permutations = 20000
+        self.n_permutations = 100000
 
     def get_permutated_directions(self, node_idx: int):
         """
