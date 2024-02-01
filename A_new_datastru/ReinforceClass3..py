@@ -38,8 +38,8 @@ class ProteinFoldingSimulator:
             iteration = 0
             self._run_episode(learning_rate)
 
-           # if randomize_weights_interval and episode % randomize_weights_interval == 0 and episode != 0:
-           #     self.randomize_weights()
+            if randomize_weights_interval and episode % randomize_weights_interval == 0 and episode != 0:
+                self.randomize_weights()
 
 
     def _run_episode(self, learning_rate):
@@ -95,7 +95,7 @@ class ProteinFoldingSimulator:
 
     def randomize_weights(self):
         # Randomize the policy weights by adding a random value between -5 and 5
-        self.policy_weights = [w + np.random.uniform(-1, 1) for w in self.policy_weights]
+        self.policy_weights = [np.random.uniform(0.01, 1) for w in self.policy_weights]
 
     @staticmethod
     def update_policy_weights(current_weights, episode_data, learning_rate):
@@ -113,7 +113,6 @@ class ProteinFoldingSimulator:
                 
                 # Clip the updated weight to ensure it stays within -1 and 1
                 updated_weights[i] = np.clip(updated_weights[i], 0, 1)
-                updated_weights[4] = 0
         return updated_weights
 
 
@@ -368,7 +367,7 @@ sequence = "HCPHPCPHPCHCHPHPPPHPPPHPPPPHPCPHPPPHPHHHCCHCHCHCHH"
 policy_weights = [0.2, 0.2, 0.2, 0.2, 0.2, 0.1]
 
 simulator = ProteinFoldingSimulator(sequence, policy_weights)
-simulator.run(num_episodes=170, learning_rate=0.04)
+simulator.run(num_episodes=500, learning_rate=0.02)
 
 print(simulator.bestscore)
 print(simulator.beststate)

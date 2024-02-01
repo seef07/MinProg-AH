@@ -5,7 +5,7 @@ import matplotlib.colors as mcolors
 
 
 # Protein sequence
-sequence = "HPHPPHHPHPPHPHHPPHPH"  # Change this to your protein sequence
+sequence = "HHPHPHPHPHHHHPHPPPHPPPHPPPPHPPPHPPPHPHHHHPHPHPHPHH"  # Change this to your protein sequence
 
 # Energy matrix
 energy_matrix = {

@@ -13,12 +13,12 @@ def main():
     l = list(sequence)
     shuffle(l)
     sequence = ''.join(l)
-    sequence = "HPHPPHHPHPPHPHHPPHPH"
+    sequence = "HHPHPHPHPHHHHPHPPPHPPPHPPPPHPPPHPPPHPHHHHPHPHPHPHH"
     score = 0
-    dim = 2
+    dim = 3
     protein = Protein(sequence)
     start_time = time.time()
-    algorithm = IterativeGreedy(protein, dimensions=dim, max_iterations=50000, debug=True)
+    algorithm = IterativeGreedy(protein, dimensions=dim, max_iterations=100000, debug=True)
     score = algorithm.run()
     algorithm.plot_bond_scores()
     print(f"Sequence: {sequence}")
