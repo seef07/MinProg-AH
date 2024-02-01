@@ -1,11 +1,19 @@
 
-###########alt heuristic############
 def altheuristic(protein_sequence, fold_index):
+    """
+    Evaluates the hydrophobic to polar ratio within a specified window around a fold index in a protein sequence.
+    
+    Parameters:
+    protein_sequence (str): The sequence of amino acids in the protein.
+    fold_index (int): The index around which the evaluation is centered.
+    
+    Returns:
+    float: The ratio of hydrophobic to total (hydrophobic + polar) residues in the window.
+    """
     hydrophobic = {'H'}  # Set of hydrophobic residue types
     polar = {'P'}  # Set of polar residue types
 
-    # Define the range to consider around the folding point
-    window_size = 4  # Adjust as needed
+    window_size = 4
     start = max(0, fold_index - window_size)
     end = min(len(protein_sequence), fold_index + window_size + 1)
 
@@ -25,49 +33,68 @@ def altheuristic(protein_sequence, fold_index):
     score = hydrophobic_count / (hydrophobic_count + polar_count)
     return score
 
-########################letter p ####################
 def currentletter(protein_sequence, fold_index):
     """
-    Apply the folding heuristic for a given fold index in the protein sequence.
-    Returns 1 if the amino acid at the fold index is 'P', otherwise returns 0.
+    Determines if the amino acid at the fold index is 'P' or 'H', returning a specified score.
+    
+    Parameters:
+    protein_sequence (str): The sequence of amino acids in the protein.
+    fold_index (int): The index of the folding point in the sequence.
+    
+    Returns:
+    int: A score based on the type of amino acid at the fold index.
     """
-    # Ensure the fold_index is within the valid range
     if fold_index < 2 or fold_index > len(protein_sequence) - 3:
         return 0
 
-    # Extract the amino acid at the fold point
     if protein_sequence[fold_index] == 'P':
         return 4
     elif protein_sequence[fold_index] == 'H':
         return 1
     else:
         return 0
-##############Energy heuristic#####################################
 
-
-##############################Compactness Heuristic############
 def compactness_heuristic(current_state, next_state):
+    """
+    Compares the compactness of the current and next states of a protein structure.
+    
+    Parameters:
+    current_state (list of tuples): Coordinates and types of amino acids in the current state.
+    next_state (list of tuples): Coordinates and types of amino acids in the next state.
+    
+    Returns:
+    float: The difference in compactness between the next and current states.
+    """
     def calculate_compactness(state):
         if not state:
             return 0
-        # Calculate the average coordinates
         avg_x = sum(node[0] for node in state) / len(state)
         avg_y = sum(node[1] for node in state) / len(state)
-
-        # Calculate the variance
         variance = sum((node[0] - avg_x)**2 + (node[1] - avg_y)**2 for node in state) / len(state)
-
-        # Return the inverse of variance as a measure of compactness
         return 1 / (1 + variance)
 
-    # Calculate compactness for current and next state and return the difference
     return calculate_compactness(next_state) - calculate_compactness(current_state)
 
-###################pattern heuristic#####################
+
 def score_pattern(pattern):
     """
-    Score the given pattern based on predefined rules.
+    Score the given protein pattern based on predefined rules. This function is used
+    to evaluate a segment of a protein sequence for its structural propensity based on
+    the composition and arrangement of its amino acids.
+
+    Parameters:
+    - pattern (str): A substring of the protein sequence, typically around a focal point or fold index.
+
+    Returns:
+    - int or float: A score representing the evaluated structural propensity of the pattern.
+      High positive scores indicate favorable configurations, while negative scores indicate
+      less favorable ones.
+
+    The scoring rules are based on hypothetical preferences for certain amino acid arrangements.
+    For example, 'HH' or 'HHHH' represent hydrophobic interactions that are favorable in protein
+    folding, thus receiving higher scores.
     """
+    # Define scoring based on specific patterns
     if pattern in ['HH', 'HHHH']:
         return 4
     elif pattern in ['PP', 'PPPP']:
@@ -76,7 +103,7 @@ def score_pattern(pattern):
         return 1
     elif pattern in ['HHPP', 'PPHH']:
         return -2
-    elif pattern in ['HHHH', 'PPPP']:
+    elif pattern in ['HHHHPPPP', 'PPPPHHHH']:  # Corrected to match function comment examples
         return -3.5
     elif pattern in ['HPHH', 'HHPH']:
         return 2
@@ -87,20 +114,34 @@ def score_pattern(pattern):
 
 def folding_heuristic(protein_sequence, fold_index):
     """
-    Apply the folding heuristic for a given fold index in the protein sequence.
+    Apply a folding heuristic for a specific index within a protein sequence. This heuristic
+    evaluates the potential folding propensity based on the amino acid pattern surrounding
+    the fold index.
+
+    Parameters:
+    - protein_sequence (str): The entire protein sequence being evaluated.
+    - fold_index (int): The index within the protein sequence around which the folding propensity
+      is to be evaluated.
+
+    Returns:
+    - int or float: A score indicating the folding propensity of the specified segment within
+      the protein sequence. The score is determined by evaluating the pattern of amino acids
+      surrounding the fold index using predefined rules.
+
+    Note:
+    The function ensures that the fold_index is within the valid range, avoiding edge cases
+    where the fold_index might be too close to the start or end of the protein sequence to
+    form a meaningful pattern for evaluation.
     """
     # Ensure the fold_index is within valid range
     if fold_index < 2 or fold_index > len(protein_sequence) - 3:
         return 0
 
-    # Extract the pattern around the fold point
+    # Extract the pattern around the fold point and score it
     pattern = protein_sequence[fold_index-2 : fold_index+3]
-
-    # Score the pattern
     score = score_pattern(pattern)
 
     return score
-###########################################################
 
 def distance_heuristic(state, new_state):
     """
@@ -131,8 +172,6 @@ def distance_heuristic(state, new_state):
     score = distance - distance_new
     return 10*score
 
-
-#####compactness######################
 def calculate_hydrophobic_compactness(state):
     """
     Calculate the compactness of hydrophobic residues in the protein structure.
@@ -163,7 +202,6 @@ def hydrophobic_compactness_heuristic(current_state, new_state):
     new_compactness = calculate_hydrophobic_compactness(new_state)
     return 10*(new_compactness - current_compactness)
 
-#################
 def calculate_cytosine_compactness(state):
     """
     Calculate the compactness of cytosine ('C') residues in the protein structure.
@@ -185,7 +223,7 @@ def calculate_cytosine_compactness(state):
     # Compactness is the inverse of average distance
     compactness = 1 / avg_distance if avg_distance != 0 else 0
     return  10* compactness
-#############################
+
 def cytosine_compactness_heuristic(current_state, new_state):
     """
     Calculate the difference in compactness of cytosine ('C') residues between the current and new states.
@@ -193,8 +231,6 @@ def cytosine_compactness_heuristic(current_state, new_state):
     current_compactness = calculate_cytosine_compactness(current_state)
     new_compactness = calculate_cytosine_compactness(new_state)
     return 10 * (new_compactness - current_compactness)
-
-#######
 
 def compactness_heuristic_H(current_state, new_state):
     """
