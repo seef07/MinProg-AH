@@ -7,7 +7,26 @@ import numpy as np
 EPISODE = 1
 
 class ProteinFoldingSimulator:
+    """
+    A simulator for protein folding using reinforcement learning to optimize folding strategies based on a policy gradient method.
+    
+    Attributes:
+        sequence (str): The sequence of amino acids in the protein.
+        energy_matrix (dict): A dictionary mapping pairs of amino acids to their interaction energy.
+        policy_weights (list): A list of weights for different heuristics in the policy.
+        action_selector (ActionSelector): An instance of ActionSelector to choose actions based on the policy.
+        state (list): The current state of the protein, represented as coordinates and amino acid types.
+        scores_per_iteration (list): A history of scores for each iteration.
+        beststate (list): The best state found during simulation.
+        bestscore (float): The score of the best state.
+        weights_history (list): A history of policy weights over iterations.
+        bond_scores_history (list): A history of bond scores over iterations.
+        bestweight (list): The best weight configuration found.
+    """
     def __init__(self, sequence, policy_weights):
+        """
+        Initializes the ProteinFoldingSimulator with a given sequence and initial policy weights.
+        """
         self.sequence = sequence
         self.energy_matrix = {
                                 'HH': -1, 'CC': -5, 'CH': -1, 'HC':-1, 
@@ -27,6 +46,13 @@ class ProteinFoldingSimulator:
         return [(i, 0, amino_acid) for i, amino_acid in enumerate(self.sequence)]
 
     def run(self, num_episodes, learning_rate):
+        """
+        Runs the simulation for a specified number of episodes with a given learning rate.
+        
+        Parameters:
+            num_episodes (int): The number of episodes to run the simulation for.
+            learning_rate (float): The learning rate for updating policy weights.
+        """
         print("Start run")
         global iteration
         global EPISODE
@@ -40,12 +66,18 @@ class ProteinFoldingSimulator:
             else:
                 self._run_episode(learning_rate, episode)
 
-
             #if randomize_weights_interval and episode % randomize_weights_interval == 0 and episode != 0:
              #   self.randomize_weights()
 
 
     def _run_episode(self, learning_rate, episode):
+        """
+        Runs a single episode of the simulation.
+        
+        Parameters:
+            learning_rate (float): The learning rate for updating policy weights.
+            episode (int): The current episode number.
+        """
         current_state = [(i, 0, amino_acid) for i, amino_acid in enumerate(self.sequence)]
         episode_data = []
         for step in range(episode):
@@ -72,6 +104,12 @@ class ProteinFoldingSimulator:
 
 
     def bigrun(self, episode):
+        """
+        Performs a run using the best weights found from previous simulations.
+        
+        Parameters:
+            episode (int): The number of steps to run in this big run.
+        """
         global EPISODE
         EPISODE = episode
         action_class = ActionSelector(self.bestweight)
@@ -91,11 +129,24 @@ class ProteinFoldingSimulator:
                 current_state = new_state
 
     def randomize_weights(self):
-        # Randomize the policy weights by adding a random value between -5 and 5
+        """
+        Randomizes the policy weights by adding a small random value to each.
+        """
         self.policy_weights = [w + np.random.uniform(-1, 1) for w in self.policy_weights]
 
     @staticmethod
     def update_policy_weights(current_weights, episode_data, learning_rate):
+        """
+        Updates the policy weights based on the episode data and learning rate.
+        
+        Parameters:
+            current_weights (list): The current set of policy weights.
+            episode_data (list): The data collected from the current episode.
+            learning_rate (float): The learning rate for updating weights.
+        
+        Returns:
+            list: The updated set of policy weights.
+        """
         updated_weights = current_weights.copy()
 
         for state, action, reward, heuristic_influence in episode_data:
@@ -114,6 +165,9 @@ class ProteinFoldingSimulator:
 
 
     def visualize_protein(self):
+        """
+        Visualizes the protein structure using matplotlib.
+        """
         state = self.beststate
         # Extract positions and sequence from the state
         positions = [(x, y) for x, y, _ in state]
@@ -135,7 +189,9 @@ class ProteinFoldingSimulator:
 
     
     def plot_weights_and_bond_scores(self):
-        # Plotting weights
+        """
+        Plots the history of policy weights and bond scores over the simulation iterations.
+        """
         weights_array = 10*np.array(self.weights_history)
         plt.figure(figsize=(12, 6))
         for i in range(weights_array.shape[1]):
@@ -149,10 +205,31 @@ class ProteinFoldingSimulator:
 
 iteration = 0
 class ActionSelector:
+    """
+    Selects actions based on the current state and policy weights.
+    
+    Attributes:
+        policy_weights (list): The current set of policy weights for decision making.
+    """
+    
     def __init__(self, policy_weights):
+        """
+        Initializes the ActionSelector with the given policy weights.
+        """
         self.policy_weights = policy_weights
 
     def select_action(self, state, start_temp=0.8, end_temp=0.01):
+        """
+        Selects an action for the given state based on the policy weights.
+        
+        Parameters:
+            state (list): The current state of the protein.
+            start_temp (float): The starting temperature for simulated annealing.
+            end_temp (float): The ending temperature for simulated annealing.
+        
+        Returns:
+            tuple: The selected action and its heuristic influence.
+        """
         global iteration
         global EPISODE
         iteration += 1
@@ -219,7 +296,19 @@ class ActionSelector:
 
 
 class State:
+    """
+    Represents the state of the protein during simulation, including its positions and sequence.
+    
+    Attributes:
+        positions (list): The positions of amino acids in the protein.
+        sequence (list): The sequence of amino acids in the protein.
+        state (list): The combined state information, including positions and types.
+        energy_matrix (dict): A dictionary mapping pairs of amino acids to their interaction energy.
+    """
     def __init__(self, state):
+        """
+        Initializes the State with the given state information.
+        """
         self.positions = [(x, y) for x, y, _ in state]
         self.sequence = [z for _, _, z in state]
         self.state = state
@@ -228,6 +317,16 @@ class State:
                                 'HP': 0, 'PH': 0, 'PP': 0, 'PC': 0, 'CP': 0
                             }
     def apply_action(self, index, clockwise=True):
+        """
+        Applies an action (rotation) to the protein state.
+        
+        Parameters:
+            index (int): The index of the amino acid around which to rotate.
+            clockwise (bool): Whether to rotate clockwise or counterclockwise.
+        
+        Returns:
+            list: The new state after applying the action.
+        """
         current_state = [list(sequence) for sequence in self.state]  # Convert tuples to lists for mutability
         positions = self.positions
 
@@ -273,6 +372,15 @@ class State:
         
 
     def compute_reward(self, new_state):
+        """
+        Computes the reward for transitioning to a new state.
+        
+        Parameters:
+            new_state (list): The state after applying an action.
+        
+        Returns:
+            float: The reward for the transition.
+        """
         # Save the current state
         current_positions, current_sequence = self.positions, self.sequence
 
@@ -294,10 +402,22 @@ class State:
         return delta
 
 class Heuristic:
-    def evaluate(self, state):
-        pass
-
+    """
+    Contains methods for evaluating states and actions using various heuristics.
+    """
     def compute_heuristic_score(state, action, policy_weights):
+        """
+        Computes the score for a given action based on heuristics and policy weights.
+        
+        Parameters:
+            state (list): The current state of the protein.
+            action (tuple): The action being evaluated.
+            policy_weights (list): The current set of policy weights.
+        
+        Returns:
+            float: The total score for the action.
+            list: A vector indicating the sign of each heuristic score.
+        """
         cstate = State(state)
         nextstate = cstate.apply_action(action[0], action[1])
         sequence = cstate.sequence
@@ -319,15 +439,7 @@ class Heuristic:
         sign_vector = [1 if score > 0 else -1 if score < 0 else 0 for score in heuristic_scores]
 
         return total, sign_vector
-
-
-
-
-##policy_gradient_main_loop
-
-#select_action  ---> Heuristis etcetera
-
-
+    
 
 #update policy weight
 sequence = "HPHPPHHPHPPHPHHPPHPH"
