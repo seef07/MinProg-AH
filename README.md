@@ -1,5 +1,13 @@
 # MinProg-AH
 
+<div align="center">
+<figure>
+    <img src="protein_folding.gif" height="420">
+    <h4></h4>
+    <figcaption>A sample 3D protein fold.</figcaption>
+</figure>
+</div>
+
 Even ter veruidelijk van waar alles ligt. Met groepje Amadeus werkte ik in de mainfolder aan een reinforcemenent Q learning algoritme. Die is nog niet af en moet nog aan geprogrammeerd worden. Die kan je vinden in /protein_folding/algorithms/reinforcement.
 
 Ik besefte echter dat het stuctuur iets te overingewikkeld is voor zo een simpele proteine vouwprobleem als deze, dus dat verdiend ook een veel simpelere structuur. Vandaar een nieuw mapje A_new_datastru. 
