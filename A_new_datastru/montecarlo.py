@@ -3,7 +3,7 @@ import math
 import matplotlib.pyplot as plt
 
 # Define the protein sequence and the energy matrix for interaction between amino acids.
-sequence = "HHPHPHPHPHHHHPHPPPHPPPHPPPPHPPPHPPPHPHHHHPHPHPHPHH"  # Example protein sequence
+sequence = "HCPHPCPHPCHCHPHPPPHPPPHPPPPHPCPHPPPHPHHHCCHCHCHCHH"  # Example protein sequence
 
 energy_matrix = {
     'HH': -1, 'CC': -5, 'CH': -1, 'HC': -1, 
@@ -74,7 +74,7 @@ def rotate_segment(positions, index, clockwise=True):
 
     return new_positions if is_valid_configuration(new_positions) else positions
 
-def monte_carlo_folding(sequence, iterations=70000, start_temp=0.8, end_temp=0.01):
+def monte_carlo_folding(sequence, iterations=1000000, start_temp=0.8, end_temp=0.1):
     """
     Simulate protein folding using the Monte Carlo method.
     

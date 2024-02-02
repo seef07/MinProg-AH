@@ -24,7 +24,9 @@ class ProteinFoldingSimulator:
         self.bond_scores_history = [] 
 
     def _initialize_state(self):
-        return [(i, 0, amino_acid) for i, amino_acid in enumerate(self.sequence)]
+        state = [(i, 0, amino_acid) for i, amino_acid in enumerate(self.sequence)]
+        print(state)
+        return state
 
     def run(self, num_episodes, learning_rate):
         print("Start run")
@@ -364,11 +366,11 @@ class Heuristic:
 
 
 #update policy weight
-sequence = "HCPHPCPHPCHCHPHPPPHPPPHPPPPHPCPHPPPHPHHHCCHCHCHCHH"
+sequence = "HCPHPCPHPCHCHPHPPPH"
 policy_weights = [0.1, 0.1020983512634933, 0.1, 0.1, 0.1, 0.5]
 
 simulator = ProteinFoldingSimulator(sequence, policy_weights)
-simulator.run(num_episodes=350, learning_rate=0.04)
+simulator.run(num_episodes=50, learning_rate=0.04)
 
 print(simulator.bestscore)
 print(simulator.beststate)

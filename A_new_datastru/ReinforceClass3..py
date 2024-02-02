@@ -188,7 +188,7 @@ class ActionSelector:
     def __init__(self, policy_weights):
         self.policy_weights = policy_weights
 
-    def select_action(self, state, start_temp=0.99, end_temp=0.01):
+    def select_action(self, state, start_temp=0.1, end_temp=0.01):
         global EPISODE 
         global iteration
         iteration += 1
@@ -210,7 +210,7 @@ class ActionSelector:
         new_energy = new_state_instance.reward_function()
 
 
-        if random.random() < temp:
+        if random.random() < 0.1:
             selected_action = random.choice(possible_actions)
 
         score, heuristic_influence = Heuristic.compute_heuristic_score(state, selected_action, policy_weights) 
