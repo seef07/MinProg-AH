@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import numpy as np
 
-sequence = "HHPHPHPHPHHHHPHPPPHPPPHPPPPHPPPHPPPHPHHHHPHPHPHPHH"
+sequence = "HHPHPHPHPHHHPHPPPHPPPHPPPPHPPPHPPPHPHHHHPHPHPHPHH"
 
 energy_matrix = {
     'HH': -1, 'CC': -5, 'CH': -1, 'HC': -1, 
