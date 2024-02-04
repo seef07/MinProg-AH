@@ -2,9 +2,6 @@ import random
 import math
 import matplotlib.pyplot as plt
 
-# Define the protein sequence and the energy matrix for interaction between amino acids.
-sequence = "HCPHPCPHPCHCHPHPPPHPPPHPPPPHPCPHPPPHPHHHCCHCHCHCHH"  # Example protein sequence
-
 energy_matrix = {
     'HH': -1, 'CC': -5, 'CH': -1, 'HC': -1, 
     'HP': 0, 'PH': 0, 'PP': 0, 'PC': 0, 'CP': 0
@@ -14,7 +11,7 @@ energy_matrix = {
 bond_scores_history = []
 
 # Initialize the protein in a straight line configuration.
-positions = [(i, 0) for i in range(len(sequence))]
+positions = None
 
 def calculate_energy(positions, sequence):
     """
@@ -74,7 +71,7 @@ def rotate_segment(positions, index, clockwise=True):
 
     return new_positions if is_valid_configuration(new_positions) else positions
 
-def monte_carlo_folding(sequence, iterations=1000000, start_temp=0.8, end_temp=0.1):
+def monte_carlo_folding(sequence, iterations=10000, start_temp=0.8, end_temp=0.1):
     """
     Simulate protein folding using the Monte Carlo method.
     
@@ -87,11 +84,13 @@ def monte_carlo_folding(sequence, iterations=1000000, start_temp=0.8, end_temp=0
     Returns:
     - tuple: The best positions found and the corresponding energy.
     """
+    positions = [(i, 0) for i in range(len(sequence))]
     current_positions = [(i, 0) for i in range(len(sequence))]
     current_energy = calculate_energy(current_positions, sequence)
     best_positions, best_energy = current_positions, current_energy
 
     for iteration in range(iterations):
+        print(iteration)
         temp = start_temp - iteration * (start_temp - end_temp) / iterations
         index = random.randint(1, len(sequence) - 2)
         new_positions = rotate_segment(current_positions, index, random.choice([True, False]))
@@ -135,10 +134,3 @@ def plot_weights_and_bond_scores():
     plt.ylabel('Bond Score')
     plt.legend()
     plt.show()
-
-# Running the Monte Carlo simulation to fold the protein and visualize the results.
-best_positions, best_energy = monte_carlo_folding(sequence)
-print("Best positions:", best_positions)
-print("Best energy:", best_energy)
-visualize_protein(best_positions, sequence)
-plot_weights_and_bond_scores()

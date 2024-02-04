@@ -1,6 +1,5 @@
 import random
 import math
-import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
@@ -13,7 +12,7 @@ energy_matrix = {
     'HP': 0, 'PH': 0, 'PP': 0, 'PC': 0, 'CP': 0
 }
 
-positions = [(i, 0, 0) for i in range(len(sequence))]
+positions = None
 
 def calculate_energy(positions, sequence):
     """
@@ -90,7 +89,7 @@ def rotate_segment_3d(positions, index, direction, axis):
 
     return new_positions if is_valid_configuration(new_positions) else positions
 
-def monte_carlo_folding(sequence, iterations=1000000, start_temp=1.0, end_temp=0.01):
+def monte_carlo_folding_3(sequence, iterations=100000, start_temp=1.0, end_temp=0.01):
     """
     Perform a Monte Carlo simulation to fold a protein into a configuration that minimizes its energy.
     
@@ -103,11 +102,13 @@ def monte_carlo_folding(sequence, iterations=1000000, start_temp=1.0, end_temp=0
     Returns:
     - tuple: The best positions found and the corresponding energy.
     """
+    positions = [(i, 0, 0) for i in range(len(sequence))]
     current_positions = positions
     current_energy = calculate_energy(current_positions, sequence)
     best_positions, best_energy = current_positions, current_energy
 
     for iteration in range(iterations):
+        print(iteration)
         temp = start_temp - (start_temp - end_temp) * (iteration / iterations)
         index = random.randint(1, len(sequence) - 2)
         axis = random.choice(['x', 'y', 'z'])
@@ -123,7 +124,7 @@ def monte_carlo_folding(sequence, iterations=1000000, start_temp=1.0, end_temp=0
 
     return best_positions, best_energy
 
-def visualize_protein(positions, sequence, energy_matrix):
+def visualize_protein_3(positions, sequence, energy_matrix):
     """
     Visualize the 3D structure of the folded protein.
     
@@ -145,62 +146,3 @@ def visualize_protein(positions, sequence, energy_matrix):
 
     plt.title("Protein Folding Visualization")
     plt.show()
-
-def setup_visualization(positions, sequence, energy_matrix):
-    fig = plt.figure(figsize=(10, 10))
-    ax = fig.add_subplot(111, projection='3d')
-    colors = {'H': 'red', 'P': 'blue', 'C': 'green'}
-    color_sequence = [colors[acid] for acid in sequence]
-
-    x, y, z = zip(*positions)
-    ax.scatter(x, y, z, c=color_sequence, depthshade=False, s=250)
-
-    for i in range(len(positions) - 1):
-        ax.plot([positions[i][0], positions[i + 1][0]], [positions[i][1], positions[i + 1][1]],
-                [positions[i][2], positions[i + 1][2]], color='black', linestyle='-', linewidth=4)
-
-    for i in range(len(sequence)):
-        for j in range(i + 2, len(sequence)):
-            dx = abs(positions[i][0] - positions[j][0])
-            dy = abs(positions[i][1] - positions[j][1])
-            dz = abs(positions[i][2] - positions[j][2])
-
-            if (dx == 1 and dy == 0 and dz == 0) or (dx == 0 and dy == 1 and dz == 0) or (dx == 0 and dy == 0 and dz == 1):
-                pair = ''.join(sorted([sequence[i], sequence[j]]))
-                line_color = 'red'  # Default color for interactions
-                linestyle = '--'
-                if pair == 'CC':  # Specific case for CC pairs
-                    line_color = 'green'
-                    linestyle = '--'  # Dashed line for CC pairs
-                if pair == 'CH' or pair == 'HC':  # Specific case for CC pairs
-                    line_color = 'blue'
-                    linestyle = '--'  # Dashed line for CC pairs
-                if energy_matrix.get(pair, 0) != 0:
-                    ax.plot([positions[i][0], positions[j][0]], [positions[i][1], positions[j][1]],
-                            [positions[i][2], positions[j][2]], color=line_color, linestyle=linestyle, linewidth=2)
-    ax.set_axis_off()
-
-    return fig, ax
-
-
-def update(num, ax, angle_step):
-    ax.view_init(elev=20, azim=num * angle_step)
-
-# Run the simulation
-best_positions, best_energy = monte_carlo_folding(sequence)
-print("Best energy:", best_energy)
-visualize_protein(best_positions, sequence, energy_matrix)
-
-from matplotlib.animation import PillowWriter  # For saving the animation as GIF
-
-def create_and_save_animation(positions, sequence, energy_matrix, filename='protein_folding.gif'):
-    fig, ax = setup_visualization(positions, sequence, energy_matrix)
-    angle_step = 2 
-    frames = int(360 / angle_step) 
-
-    animation = FuncAnimation(fig, update, frames=frames, fargs=(ax, angle_step), blit=False)
-    writer = PillowWriter(fps=20)  
-    animation.save(filename, writer=writer)
-    plt.close(fig)  
-
-create_and_save_animation(best_positions, sequence, energy_matrix)

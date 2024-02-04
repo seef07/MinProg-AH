@@ -452,5 +452,4 @@ print(simulator.bestscore)
 print(simulator.beststate)
 simulator.visualize_protein()
 simulator.plot_weights_and_bond_scores()
-simulator.bigrun(10000)
 
